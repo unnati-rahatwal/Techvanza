@@ -24,16 +24,18 @@ async function dbConnect() {
         return cached.conn;
     }
 
-    if (!cached.promise) {
         const opts = {
             bufferCommands: false,
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+            tls: true,
+            tlsAllowInvalidCertificates: true,
+            family: 4, // Force IPv4 to avoid IPv6 issues
         };
 
         cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
             return mongoose;
         });
-    }
-
     try {
         cached.conn = await cached.promise;
     } catch (e) {

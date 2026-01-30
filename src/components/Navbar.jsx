@@ -60,6 +60,24 @@ export default function Navbar() {
                     Dashboard
                 </Link>
 
+                {user.role === 'supplier' && (
+                    <Link
+                        href="/supplier/requirements"
+                        style={{
+                            color: '#38ef7d',
+                            textDecoration: 'none',
+                            fontWeight: '600',
+                            border: '1px solid rgba(56, 239, 125, 0.5)',
+                            padding: '8px 16px',
+                            borderRadius: '20px',
+                            background: 'rgba(56, 239, 125, 0.1)',
+                            marginLeft: '1rem'
+                        }}
+                    >
+                        + Add Requirement
+                    </Link>
+                )}
+
                 {/* Profile Dropdown */}
                 <div style={{ position: 'relative' }} ref={dropdownRef}>
                     <div
