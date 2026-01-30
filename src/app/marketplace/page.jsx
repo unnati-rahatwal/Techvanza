@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import AIAgent from '@/components/AIAgent';
 import styles from './page.module.css';
 
 export default function Marketplace() {
@@ -185,6 +186,7 @@ export default function Marketplace() {
                     )}
                 </main>
             </div>
+            <AIAgent />
         </div>
     );
 }

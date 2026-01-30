@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Listing from '@/models/Listing';
+import User from '@/models/User'; // Ensure User model is registered for populate
 import cloudinary from '@/lib/cloudinary';
 
 export async function POST(request) {

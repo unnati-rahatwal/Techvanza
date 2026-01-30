@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import AIAgent from '@/components/AIAgent';
 import styles from './page.module.css';
 
 export default function BuyerDashboard() {
@@ -82,8 +83,13 @@ export default function BuyerDashboard() {
                     </div>
                     <div className={styles.card}>
                         <h3>Impact Created</h3>
-                        <p className={styles.number}>{Math.floor((stats?.totalQuantity || 0) * 2.5)} <span className={styles.unit}>kg CO₂</span></p>
-                        <p className={styles.subtext}>Saved from landfill</p>
+                        <p className={styles.number}>{stats?.carbonSaved || Math.floor((stats?.totalQuantity || 0) * 2.5)} <span className={styles.unit}>kg CO₂</span></p>
+                        <p className={styles.subtext}>Verified Simplifed Carbon Impact</p>
+                    </div>
+                    <div className={styles.card}>
+                        <h3>Green Points</h3>
+                        <p className={styles.number}>{stats?.creditsEarned || 0} <span className={styles.unit}>pts</span></p>
+                        <p className={styles.subtext}>Buyer Sustainability Score</p>
                     </div>
                     <div className={styles.card}>
                         <h3>Total Spend</h3>
@@ -166,6 +172,7 @@ export default function BuyerDashboard() {
                     )}
                 </section>
             </div>
+            <AIAgent />
         </div>
     );
 }
