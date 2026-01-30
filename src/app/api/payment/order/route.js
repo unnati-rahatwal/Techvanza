@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import razorpay from '@/lib/razorpay';
 import dbConnect from '@/lib/mongodb';
-import Requirement from '@/models/Requirement'; // Assuming 'Requirement' is the Listing model
-import { v4 as uuidv4 } from 'uuid';
+import Requirement from '@/models/Listing'; // Mapped to Listing model
+import Transaction from '@/models/Transaction'; // To log intent? Or just Listing
 
 export async function POST(request) {
     try {
@@ -11,17 +11,15 @@ export async function POST(request) {
         const { listingId, quantity, userId } = body;
 
         // Fetch listing to calculate amount
-        // Note: In a real app we would check stock availability here too
         const listing = await Requirement.findById(listingId);
-        
+
         if (!listing) {
             return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
         }
 
         // Calculate total amount (Price per kg * quantity)
-        // Ensure price is a number
-        const price = parseInt(listing.priceRange.min); // Using min price as the 'price' for now
-        const amount = price * quantity * 100; // Amount in paisa for Razorpay
+        const price = listing.pricePerKg;
+        const amount = Math.round(price * quantity * 100); // Amount in paisa
 
         const options = {
             amount: amount,
