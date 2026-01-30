@@ -1,45 +1,54 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import Navbar from '@/components/Navbar';
-import Input from '@/components/Input';
+import PaymentButton from '@/components/PaymentButton';
+import AIAgent from '@/components/AIAgent';
 import styles from './page.module.css';
+
+// Unsplash Image Helper
+const getWasteImage = (type) => {
+    const typeLower = type?.toLowerCase() || '';
+    if (typeLower.includes('plastic')) return 'https://images.unsplash.com/photo-1595278069441-2cf29f8005a4?auto=format&fit=crop&w=800&q=80';
+    if (typeLower.includes('paper')) return 'https://images.unsplash.com/photo-1605600659873-d808a13a4d2d?auto=format&fit=crop&w=800&q=80';
+    if (typeLower.includes('metal')) return 'https://images.unsplash.com/photo-1558611848-73f7eb4001a1?auto=format&fit=crop&w=800&q=80';
+    if (typeLower.includes('glass')) return 'https://images.unsplash.com/photo-1533624776077-0a25ae639a69?auto=format&fit=crop&w=800&q=80';
+    if (typeLower.includes('organic')) return 'https://images.unsplash.com/photo-1506484381205-f7945653044d?auto=format&fit=crop&w=800&q=80';
+    if (typeLower.includes('e-waste') || typeLower.includes('electronic')) return 'https://images.unsplash.com/photo-1550989460-0adf9ea622e2?auto=format&fit=crop&w=800&q=80';
+    return 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80'; // General Generic
+};
 
 export default function Marketplace() {
     const [listings, setListings] = useState([]);
-    const [filterType, setFilterType] = useState('');
+    const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const wasteOptions = [
-        'Plastic (PET, HDPE)',
-        'Paper & Cardboard',
-        'Glass',
-        'Metal (Scrap)',
-        'E-Waste',
-        'Textile Waste',
-        'Organic/Bio'
-    ];
+    const fetchListings = async () => {
+        try {
+            const res = await fetch('/api/supplier/requirements');
+            const data = await res.json();
+            if (data.requirements) {
+                setListings(data.requirements);
+            }
+        } catch (error) {
+            console.error('Error fetching listings:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchListings = async () => {
-            setLoading(true);
-            try {
-                let url = '/api/listings?limit=50';
-                if (filterType) url += `&type=${encodeURIComponent(filterType)}`;
-
-                const res = await fetch(url);
-                const data = await res.json();
-                setListings(data.listings);
-            } catch (error) {
-                console.error('Error fetching listings:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
 
         fetchListings();
-    }, [filterType]);
+
+        // Real-time Polling (every 3 seconds)
+        const interval = setInterval(fetchListings, 3000);
+        return () => clearInterval(interval);
+    }, []);
 
     return (
         <div className={styles.container}>
@@ -47,49 +56,76 @@ export default function Marketplace() {
             <div className={styles.content}>
                 <header className={styles.header}>
                     <h1>Marketplace</h1>
-                    <div className={styles.filters}>
-                        <select
-                            value={filterType}
-                            onChange={(e) => setFilterType(e.target.value)}
-                            className={styles.select}
-                        >
-                            <option value="">All Types</option>
-                            {wasteOptions.map(opt => (
-                                <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                        </select>
-                    </div>
+                    <p style={{ color: '#94a3b8', marginTop: '0.5rem' }}>
+                        Browse and purchase verified waste listings. Payments tracked on Sepolia Blockchain.
+                    </p>
                 </header>
 
-                {loading ? (
-                    <div className={styles.loading}>Loading Listings...</div>
-                ) : listings.length === 0 ? (
-                    <p className={styles.empty}>No listings found matching your criteria.</p>
+                {loading && listings.length === 0 ? (
+                    <div style={{ color: 'white', textAlign: 'center', marginTop: '3rem' }}>Loading Marketplace...</div>
                 ) : (
                     <div className={styles.grid}>
                         {listings.map(listing => (
-                            <Link key={listing._id} href={`/listings/${listing._id}`} className={styles.cardLink}>
-                                <div className={styles.card}>
-                                    <div className={styles.imageContainer}>
-                                        {listing.imageUrl ? (
-                                            <img src={listing.imageUrl} alt={listing.title} className={styles.image} />
+                            <div key={listing._id} className={styles.card}>
+                                <div className={styles.imageContainer}>
+                                    <img
+                                        src={listing.imageUrl || getWasteImage(listing.wasteType)}
+                                        alt={listing.wasteType}
+                                        className={styles.image}
+                                    />
+                                </div>
+                                <div className={styles.details}>
+                                    <span className={styles.tag}>{listing.wasteType}</span>
+                                    <h3 className={styles.title}>{listing.wasteType} Lot</h3>
+
+                                    <div className={styles.infoRow}>
+                                        <span>Quantity:</span>
+                                        <span style={{ color: 'white' }}>{listing.quantity} kg</span>
+                                    </div>
+                                    <div className={styles.infoRow}>
+                                        <span>Location:</span>
+                                        <span style={{ color: 'white' }}>{listing.location}</span>
+                                    </div>
+                                    <div className={styles.infoRow}>
+                                        <span>Supplier:</span>
+                                        <span style={{ color: 'white' }}>{listing.userId?.name || 'Verified Supplier'}</span>
+                                    </div>
+
+                                    <div className={styles.price}>
+                                        ₹{listing.priceRange?.min || 'N/A'}
+                                    </div>
+
+                                    <div className={styles.actions}>
+                                        {user && user.role === 'buyer' ? (
+                                            <PaymentButton
+                                                listing={listing}
+                                                user={user}
+                                                onSuccess={fetchListings}
+                                            />
                                         ) : (
-                                            <div className={styles.placeholder}>No Image</div>
+                                            <button
+                                                disabled
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '0.8rem',
+                                                    background: '#334155',
+                                                    color: '#94a3b8',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    cursor: 'not-allowed'
+                                                }}
+                                            >
+                                                {user?.role === 'supplier' ? 'Suppliers cannot buy' : 'Login as Buyer to Purchase'}
+                                            </button>
                                         )}
                                     </div>
-                                    <div className={styles.cardBody}>
-                                        <h3>{listing.title}</h3>
-                                        <p className={styles.price}>₹{listing.pricePerKg}/kg</p>
-                                        <p className={styles.detail}>{listing.quantity}kg Available</p>
-                                        <p className={styles.location}>📍 {listing.location}</p>
-                                        <span className={styles.tag}>{listing.wasteType}</span>
-                                    </div>
                                 </div>
-                            </Link>
+                            </div>
                         ))}
                     </div>
                 )}
             </div>
+            <AIAgent />
         </div>
     );
 }

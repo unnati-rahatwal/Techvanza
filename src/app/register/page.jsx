@@ -8,20 +8,25 @@ import MultiSelect from '../../components/MultiSelect';
 import styles from '../../styles/auth.module.css';
 
 export default function Register() {
-    const [userType, setUserType] = useState('supplier');
+    const [role, setRole] = useState('supplier');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [locationLoading, setLocationLoading] = useState(false);
+    const [locationError, setLocationError] = useState('');
+    const router = useRouter();
+
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         phone: '',
         password: '',
+        confirmPassword: '',
         location: '',
+        coordinates: null,
         establishmentYear: '',
-        wasteTypes: []
+        wasteTypes: [], // For Supplier
+        interestTypes: [] // For Buyer
     });
-
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const router = useRouter();
 
     useEffect(() => {
         // Redirect if already logged in
@@ -44,23 +49,57 @@ export default function Register() {
         setFormData({ ...formData, wasteTypes: selected });
     };
 
+    const getLocation = () => {
+        if (!navigator.geolocation) {
+            setLocationError('Geolocation is not supported by your browser');
+            return;
+        }
+
+        setLocationLoading(true);
+        setLocationError('');
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                setFormData(prev => ({
+                    ...prev,
+                    coordinates: { lat: latitude, lng: longitude },
+                    location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` // Temporary display
+                }));
+                setLocationLoading(false);
+            },
+            (error) => {
+                console.error("Error getting location:", error);
+                setLocationError('Unable to retrieve your location. Please enter manually.');
+                setLocationLoading(false);
+            }
+        );
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
+
+        if (formData.password !== formData.confirmPassword) {
+            setError('Passwords do not match');
+            setLoading(false);
+            return;
+        }
 
         try {
             // Transform data to match API expectation
             const payload = {
                 name: formData.name,
                 email: formData.email,
-                phone: formData.phone, // API expects 'mobile', need to check mapping
+                phone: formData.phone,
                 password: formData.password,
-                role: userType,
+                role: role,
                 location: formData.location,
+                coordinates: formData.coordinates,
                 establishmentYear: formData.establishmentYear,
-                wasteTypes: userType === 'supplier' ? formData.wasteTypes : undefined,
-                interestTypes: userType === 'buyer' ? formData.wasteTypes : undefined
+                wasteTypes: role === 'supplier' ? formData.wasteTypes : undefined,
+                interestTypes: role === 'buyer' ? formData.wasteTypes : undefined
             };
 
             // Map phone to mobile if API expects mobile
@@ -98,15 +137,15 @@ export default function Register() {
 
                 <div className={styles.userTypeSwitch}>
                     <button
-                        className={`${styles.switchBtn} ${userType === 'supplier' ? styles.active : ''}`}
-                        onClick={() => setUserType('supplier')}
+                        className={`${styles.switchBtn} ${role === 'supplier' ? styles.active : ''}`}
+                        onClick={() => setRole('supplier')}
                         type="button"
                     >
                         I'm a Supplier
                     </button>
                     <button
-                        className={`${styles.switchBtn} ${userType === 'buyer' ? styles.active : ''}`}
-                        onClick={() => setUserType('buyer')}
+                        className={`${styles.switchBtn} ${role === 'buyer' ? styles.active : ''}`}
+                        onClick={() => setRole('buyer')}
                         type="button"
                     >
                         I'm a Buyer
@@ -138,13 +177,33 @@ export default function Register() {
                             onChange={handleChange}
                             required
                         />
-                        <Input
-                            label="Location (City)"
-                            name="location"
-                            placeholder="e.g. Pune, Mumbai"
-                            onChange={handleChange}
-                            required
-                        />
+
+                        {/* Location Field with Geolocation */}
+                        <div>
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
+                                <div style={{ flex: 1 }}>
+                                    <Input
+                                        label="Location (City/Coordinates)"
+                                        name="location"
+                                        placeholder="e.g. Pune, Mumbai"
+                                        value={formData.location}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                </div>
+                                <Button
+                                    type="button"
+                                    onClick={getLocation}
+                                    variant="secondary"
+                                    style={{ marginBottom: '1rem', padding: '0.5rem' }}
+                                    disabled={locationLoading}
+                                >
+                                    {locationLoading ? '...' : '📍'}
+                                </Button>
+                            </div>
+                            {locationError && <p style={{ color: '#ff4d4d', fontSize: '0.8rem', marginTop: '-0.5rem' }}>{locationError}</p>}
+                        </div>
+
 
                         <Input
                             label="Establishment Year"
@@ -156,10 +215,10 @@ export default function Register() {
                         />
 
                         <MultiSelect
-                            label={userType === 'supplier' ? "Waste Types Supplied" : "Interested Waste Types"}
+                            label={role === 'supplier' ? "Waste Types Supplied" : "Interested Waste Types"}
                             selected={formData.wasteTypes}
                             onChange={handleWasteTypeChange}
-                            placeholder={userType === 'supplier' ? "Select what you supply..." : "Select what you need..."}
+                            placeholder={role === 'supplier' ? "Select what you supply..." : "Select what you need..."}
                         />
 
                         <Input
@@ -170,11 +229,19 @@ export default function Register() {
                             onChange={handleChange}
                             required
                         />
+                        <Input
+                            label="Confirm Password"
+                            name="confirmPassword"
+                            type="password"
+                            placeholder="Confirm password"
+                            onChange={handleChange}
+                            required
+                        />
 
                         <div style={{ marginTop: '1rem' }}>
                             {error && <p style={{ color: '#ff4d4d', marginBottom: '1rem' }}>{error}</p>}
                             <Button type="submit" variant="primary">
-                                Create Account
+                                {loading ? 'Creating Account...' : 'Create Account'}
                             </Button>
                         </div>
                     </div>

@@ -23,9 +23,30 @@ export async function GET(request) {
             role: user.role,
             totalQuantity: 0,
             totalValue: 0,
-            activeListings: 0, // Only for seller
-            completedOrders: 0
+            activeListings: 0,
+            completedOrders: 0,
+            carbonSaved: 0,
+            creditsEarned: 0,
+            projectedTaxBenefit: 0
         };
+
+        const creditStats = await import('@/models/Credit').then(mod => mod.default.aggregate([
+            { $match: { userId: user._id } },
+            {
+                $group: {
+                    _id: null,
+                    totalCarbon: { $sum: "$carbonSaved" },
+                    totalCredits: { $sum: "$creditsEarned" },
+                    totalTaxBenefit: { $sum: "$taxBenefitValue" }
+                }
+            }
+        ]));
+
+        if (creditStats.length > 0) {
+            stats.carbonSaved = Math.round(creditStats[0].totalCarbon * 10) / 10;
+            stats.creditsEarned = creditStats[0].totalCredits;
+            stats.projectedTaxBenefit = creditStats[0].totalTaxBenefit;
+        }
 
         if (user.role === 'supplier') {
             // Seller Stats
