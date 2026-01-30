@@ -159,6 +159,7 @@ export default function Register() {
                         />
 
                         <div style={{ marginTop: '1rem' }}>
+                            {error && <p style={{ color: '#ff4d4d', marginBottom: '1rem' }}>{error}</p>}
                             <Button type="submit" variant="primary">
                                 Create Account
                             </Button>
@@ -166,7 +167,6 @@ export default function Register() {
                     </div>
 
                     <div style={{ textAlign: 'center', marginTop: '1.5rem', color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>
-                        {error && <p style={{ color: '#ff4d4d', marginBottom: '1rem' }}>{error}</p>}
                         Already have an account?{' '}
                         <Link href="/login" style={{ color: 'var(--primary)', fontWeight: '500' }}>
                             Log In

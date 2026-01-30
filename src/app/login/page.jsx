@@ -7,18 +7,17 @@ import Button from '../../components/Button';
 import styles from '../../styles/auth.module.css';
 
 export default function Login() {
+    const router = useRouter(); // Initialize router
     const [formData, setFormData] = useState({
         email: '',
         password: ''
     });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
-
-    const router = useRouter(); // Initialize router
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
