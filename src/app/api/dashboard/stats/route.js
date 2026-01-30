@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '../../../../lib/mongodb';
-import Listing from '../../../../models/Listing';
-import Transaction from '../../../../models/Transaction';
-import User from '../../../../models/User';
+import dbConnect from '@/lib/mongodb';
+import Listing from '@/models/Listing';
+import Transaction from '@/models/Transaction';
+import User from '@/models/User';
 
 export async function GET(request) {
     try {

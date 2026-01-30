@@ -2,8 +2,8 @@
 
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '../../../components/Navbar';
-import Button from '../../../components/Button';
+import Navbar from '@/components/Navbar';
+import Button from '@/components/Button';
 import styles from './page.module.css';
 
 export default function ListingDetails({ params }) {

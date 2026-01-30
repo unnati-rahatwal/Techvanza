@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Navbar from '../../../components/Navbar';
+import Navbar from '@/components/Navbar';
 import styles from './page.module.css';
 
 export default function SellerDashboard() {

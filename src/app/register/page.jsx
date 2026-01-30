@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Input from '../../components/Input';
-import Button from '../../components/Button';
-import MultiSelect from '../../components/MultiSelect';
+import Input from '@/components/Input';
+import Button from '@/components/Button';
+import MultiSelect from '@/components/MultiSelect';
 import styles from './page.module.css';
 
 export default function Register() {

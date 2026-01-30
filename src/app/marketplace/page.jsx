@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Navbar from '../../components/Navbar';
-import Input from '../../components/Input';
+import Navbar from '@/components/Navbar';
+import Input from '@/components/Input';
 import styles from './page.module.css';
 
 export default function Marketplace() {
