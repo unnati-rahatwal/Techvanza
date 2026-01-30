@@ -20,6 +20,7 @@ export default function CreateListing() {
     });
     const [image, setImage] = useState(null);
     const [preview, setPreview] = useState(null);
+    const [locationLoading, setLocationLoading] = useState(false);
 
     // Camera related states
     const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -109,6 +110,33 @@ export default function CreateListing() {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const getLocation = () => {
+        if (!navigator.geolocation) {
+            alert('Geolocation is not supported by your browser');
+            return;
+        }
+
+        setLocationLoading(true);
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                // For now, just putting coords in the text field. 
+                // Ideally this would be reverse geocoded or stored as discrete lat/lng in DB
+                setFormData(prev => ({
+                    ...prev,
+                    location: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+                }));
+                setLocationLoading(false);
+            },
+            (error) => {
+                console.error("Error getting location:", error);
+                alert('Unable to retrieve location');
+                setLocationLoading(false);
+            }
+        );
     };
 
     const handleSubmit = async (e) => {
@@ -269,14 +297,43 @@ export default function CreateListing() {
                         />
                     </div>
 
-                    <Input
-                        label="Pickup Location"
-                        name="location"
-                        value={formData.location}
-                        onChange={handleChange}
-                        placeholder="Enter Address"
-                        required
-                    />
+                    <div className={styles.formGroup}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <label style={{ marginBottom: 0 }}>Pickup Location</label>
+                            <button
+                                type="button"
+                                onClick={getLocation}
+                                disabled={locationLoading}
+                                style={{
+                                    background: 'transparent',
+                                    border: '1px solid #38ef7d',
+                                    color: '#38ef7d',
+                                    borderRadius: '4px',
+                                    padding: '0.2rem 0.6rem',
+                                    fontSize: '0.8rem',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                {locationLoading ? 'Locating...' : '📍 Use Live Location'}
+                            </button>
+                        </div>
+                        <input
+                            name="location"
+                            value={formData.location}
+                            onChange={handleChange}
+                            placeholder="Enter Address or use Live Location"
+                            className={styles.input} // Assuming reusing input styles if possible, else manual style
+                            required
+                            style={{
+                                width: '100%',
+                                padding: '1rem',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                background: 'rgba(0,0,0,0.2)',
+                                color: 'white'
+                            }}
+                        />
+                    </div>
 
                     {error && <p className={styles.error}>{error}</p>}
 

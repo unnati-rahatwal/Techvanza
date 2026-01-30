@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Listing from '@/models/Listing';
-import User from '@/models/User'; // Ensure User model is registered for populate
+import User from '@/models/User';
 import cloudinary from '@/lib/cloudinary';
+import { sendSMS, makeCall } from '@/lib/twilio';
 
 export async function POST(request) {
     try {
@@ -19,20 +20,31 @@ export async function POST(request) {
         let imageUrl = '';
 
         if (file) {
-            const arrayBuffer = await file.arrayBuffer();
-            const buffer = new Uint8Array(arrayBuffer);
+            console.log('Starting Cloudinary upload...');
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const buffer = new Uint8Array(arrayBuffer);
 
-            const result = await new Promise((resolve, reject) => {
-                cloudinary.uploader.upload_stream(
-                    { folder: 'waste-marketplace' },
-                    (error, result) => {
-                        if (error) reject(error);
-                        else resolve(result);
-                    }
-                ).end(buffer);
-            });
+                const result = await new Promise((resolve, reject) => {
+                    cloudinary.uploader.upload_stream(
+                        { folder: 'waste-marketplace', timeout: 60000 },
+                        (error, result) => {
+                            if (error) {
+                                console.error('Cloudinary Upload Error:', error);
+                                reject(error);
+                            } else {
+                                resolve(result);
+                            }
+                        }
+                    ).end(buffer);
+                });
 
-            imageUrl = result.secure_url;
+                imageUrl = result.secure_url;
+                console.log('Cloudinary upload success:', imageUrl);
+            } catch (uploadErr) {
+                console.error('Failed to upload image:', uploadErr);
+                return NextResponse.json({ error: 'Image upload failed: ' + uploadErr.message }, { status: 502 });
+            }
         }
 
         const listingData = {
@@ -47,6 +59,54 @@ export async function POST(request) {
         };
 
         const listing = await Listing.create(listingData);
+
+        // --- BROADCAST ALERTS (SMS & VOICE) ---
+        // Run in background
+        (async () => {
+            try {
+                // 1. Fetch all Buyers with phone numbers
+                const buyers = await User.find({ role: 'buyer', mobile: { $exists: true, $ne: '' } });
+                
+                if (buyers.length > 0) {
+                    const messageText = `New Listing Alert: ${listingData.quantity}kg ${listingData.wasteType} available at ${listingData.location}. Log in to EcoTrade to buy!`;
+                    // Simplified voice text for better TTS flow
+                    const voiceText = `Namaste. New listing alert on Eco Trade. ${listingData.quantity} kilograms of ${listingData.wasteType} is now available at ${listingData.location}. Please login to the dashboard to purchase. Thank you.`;
+
+                    // Helper to format phone number to E.164
+                    const formatPhoneNumber = (phone) => {
+                        let p = phone.replace(/\D/g, ''); // Remove non-digits
+                        if (p.length === 10) return `+91${p}`; // Assume India if 10 digits
+                        if (p.length === 12 && p.startsWith('91')) return `+${p}`;
+                        if (!p.startsWith('+')) return `+${p}`;
+                        return p;
+                    };
+
+                    // 2. Send Notifications
+                    const notifications = buyers.map(async (buyer) => {
+                        const formattedPhone = formatPhoneNumber(buyer.mobile);
+                        
+                        try {
+                            // Send SMS
+                            await sendSMS(formattedPhone, messageText);
+                            console.log(`SMS sent to ${formattedPhone}`);
+
+                            // Make Call (using Twilio TTS)
+                            await makeCall(formattedPhone, voiceText);
+                            console.log(`Call initiated to ${formattedPhone}`);
+                            
+                        } catch (notifyError) {
+                            console.error(`Failed to notify ${formattedPhone}:`, notifyError.message);
+                        }
+                    });
+
+                    await Promise.allSettled(notifications);
+                    console.log(`Broadcast sent to ${buyers.length} buyers.`);
+                }
+            } catch (broadcastError) {
+                console.error('Broadcast Error:', broadcastError);
+            }
+        })();
+        // ---------------------------------------
 
         return NextResponse.json({ message: 'Listing created successfully', listing }, { status: 201 });
 
