@@ -1,12 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '../../../components/Navbar';
+import styles from './page.module.css';
 
 export default function BuyerDashboard() {
+    const [stats, setStats] = useState(null);
+    const [recommendations, setRecommendations] = useState([]);
+    const [loading, setLoading] = useState(true);
     const router = useRouter();
-    const [user, setUser] = useState(null);
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
@@ -15,43 +19,96 @@ export default function BuyerDashboard() {
             return;
         }
 
-        const parsedUser = JSON.parse(storedUser);
-        if (parsedUser.role !== 'buyer') {
-            router.push(`/dashboard/${parsedUser.role}`); // Redirect to correct dashboard
+        const user = JSON.parse(storedUser);
+        if (user.role !== 'buyer') {
+            router.push('/login');
             return;
         }
 
-        setUser(parsedUser);
+        const fetchData = async () => {
+            try {
+                // Fetch Stats
+                const statsRes = await fetch(`/api/dashboard/stats?userId=${user._id}`);
+                const statsData = await statsRes.json();
+                setStats(statsData.stats);
+
+                // Fetch Recommendations
+                const recRes = await fetch(`/api/recommendations?userId=${user._id}`);
+                const recData = await recRes.json();
+                setRecommendations(recData.recommendations);
+            } catch (error) {
+                console.error('Error fetching dashboard data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
     }, [router]);
 
-    if (!user) return null;
+    if (loading) return (
+        <>
+            <Navbar />
+            <div className={styles.loading}>Loading Dashboard...</div>
+        </>
+    );
 
     return (
-        <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #134e5e 0%, #71b280 100%)', color: 'white' }}>
+        <div className={styles.container}>
             <Navbar />
-            <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-                <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem', fontWeight: 'bold' }}>Buyer Dashboard</h1>
-                <p style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.8)' }}>Welcome back, {user.name}!</p>
+            <div className={styles.content}>
+                <header className={styles.header}>
+                    <h1>Buyer Dashboard</h1>
+                    <Link href="/marketplace" className={styles.browseBtn}>
+                        Browse Marketplace
+                    </Link>
+                </header>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginTop: '3rem' }}>
-                    {/* Stat Card 1 */}
-                    <div style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', padding: '2rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                        <h3 style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.7)', marginBottom: '0.5rem' }}>Purchased Waste</h3>
-                        <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>850 kg</p>
+                {/* Stats Cards */}
+                <div className={styles.statsGrid}>
+                    <div className={styles.card}>
+                        <h3>Total Purchased</h3>
+                        <p className={styles.number}>{stats?.totalQuantity || 0} kg</p>
                     </div>
-
-                    {/* Stat Card 2 */}
-                    <div style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', padding: '2rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                        <h3 style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.7)', marginBottom: '0.5rem' }}>Total Spend</h3>
-                        <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>₹ 28,500</p>
+                    <div className={styles.card}>
+                        <h3>Total Spend</h3>
+                        <p className={styles.number}>₹{stats?.totalValue || 0}</p>
                     </div>
-
-                    {/* Stat Card 3 */}
-                    <div style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', padding: '2rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                        <h3 style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.7)', marginBottom: '0.5rem' }}>Pending Orders</h3>
-                        <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>2</p>
+                    <div className={styles.card}>
+                        <h3>Orders Completed</h3>
+                        <p className={styles.number}>{stats?.completedOrders || 0}</p>
                     </div>
                 </div>
+
+                {/* Recommendations */}
+                <section className={styles.section}>
+                    <h2>Recommended For You</h2>
+                    {recommendations.length === 0 ? (
+                        <p>No recommendations yet. Update your interests or browse the marketplace.</p>
+                    ) : (
+                        <div className={styles.listingsGrid}>
+                            {recommendations.map(listing => (
+                                <Link key={listing._id} href={`/listings/${listing._id}`} className={styles.listingCardLink}>
+                                    <div className={styles.listingCard}>
+                                        <div className={styles.imageContainer}>
+                                            {listing.imageUrl && (
+                                                <img src={listing.imageUrl} alt={listing.title} className={styles.listingImage} />
+                                            )}
+                                        </div>
+                                        <div className={styles.listingContent}>
+                                            <h3>{listing.title}</h3>
+                                            <p className={styles.price}>₹{listing.pricePerKg}/kg</p>
+                                            <p className={styles.location}>📍 {listing.location}</p>
+                                            <div className={styles.tags}>
+                                                <span className={styles.tag}>{listing.wasteType}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+                </section>
             </div>
         </div>
     );

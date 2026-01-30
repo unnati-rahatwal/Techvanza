@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Input from '../../components/Input';
@@ -10,6 +10,16 @@ import styles from './page.module.css';
 
 export default function Register() {
     const router = useRouter();
+
+    useEffect(() => {
+        // Redirect if already logged in
+        const user = localStorage.getItem('user');
+        if (user) {
+            const parsedUser = JSON.parse(user);
+            router.push(`/dashboard/${parsedUser.role}`);
+        }
+    }, [router]);
+
     const [role, setRole] = useState('supplier'); // 'supplier' or 'buyer'
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');

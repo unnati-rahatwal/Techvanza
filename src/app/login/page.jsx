@@ -14,10 +14,17 @@ function LoginForm() {
     const [success, setSuccess] = useState('');
 
     useEffect(() => {
+        // Redirect if already logged in
+        const user = localStorage.getItem('user');
+        if (user) {
+            const parsedUser = JSON.parse(user);
+            router.push(`/dashboard/${parsedUser.role}`);
+        }
+
         if (searchParams.get('registered')) {
             setSuccess('Registration successful! Please log in.');
         }
-    }, [searchParams]);
+    }, [searchParams, router]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
