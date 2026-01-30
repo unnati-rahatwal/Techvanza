@@ -8,13 +8,13 @@ import styles from './page.module.css';
 
 const getWasteImage = (type) => {
     const typeLower = type?.toLowerCase() || '';
-    if (typeLower.includes('plastic')) return 'https://images.unsplash.com/photo-1595278069441-2cf29f8005a4?auto=format&fit=crop&w=800&q=80';
-    if (typeLower.includes('paper')) return 'https://images.unsplash.com/photo-1605600659873-d808a13a4d2d?auto=format&fit=crop&w=800&q=80';
-    if (typeLower.includes('metal')) return 'https://images.unsplash.com/photo-1558611848-73f7eb4001a1?auto=format&fit=crop&w=800&q=80';
-    if (typeLower.includes('glass')) return 'https://images.unsplash.com/photo-1533624776077-0a25ae639a69?auto=format&fit=crop&w=800&q=80';
-    if (typeLower.includes('organic')) return 'https://images.unsplash.com/photo-1506484381205-f7945653044d?auto=format&fit=crop&w=800&q=80';
-    if (typeLower.includes('e-waste') || typeLower.includes('electronic')) return 'https://images.unsplash.com/photo-1550989460-0adf9ea622e2?auto=format&fit=crop&w=800&q=80';
-    return 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80'; // General Generic
+    if (typeLower.includes('plastic')) return 'https://placehold.co/600x400/22c55e/ffffff?text=Plastic+Waste';
+    if (typeLower.includes('paper')) return 'https://placehold.co/600x400/f59e0b/ffffff?text=Paper+Waste';
+    if (typeLower.includes('metal')) return 'https://placehold.co/600x400/64748b/ffffff?text=Metal+Scrap';
+    if (typeLower.includes('glass')) return 'https://placehold.co/600x400/0ea5e9/ffffff?text=Glass+Waste';
+    if (typeLower.includes('organic')) return 'https://placehold.co/600x400/84cc16/ffffff?text=Organic+Waste';
+    if (typeLower.includes('e-waste')) return 'https://placehold.co/600x400/a855f7/ffffff?text=E-Waste';
+    return 'https://placehold.co/600x400/10b981/ffffff?text=Eco+Waste';
 };
 
 export default function ListingDetails({ params }) {
