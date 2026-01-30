@@ -23,6 +23,8 @@ export default function Register() {
     const [role, setRole] = useState('supplier'); // 'supplier' or 'buyer'
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [locationLoading, setLocationLoading] = useState(false);
+    const [locationError, setLocationError] = useState('');
 
     const [formData, setFormData] = useState({
         name: '',
@@ -31,6 +33,7 @@ export default function Register() {
         password: '',
         confirmPassword: '',
         location: '',
+        coordinates: null,
         establishmentYear: '',
         wasteTypes: [], // For Supplier
         interestTypes: [] // For Buyer
@@ -56,6 +59,37 @@ export default function Register() {
         setFormData(prev => ({ ...prev, [field]: options }));
     };
 
+    const getLocation = () => {
+        if (!navigator.geolocation) {
+            setLocationError('Geolocation is not supported by your browser');
+            return;
+        }
+
+        setLocationLoading(true);
+        setLocationError('');
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                setFormData(prev => ({
+                    ...prev,
+                    coordinates: { lat: latitude, lng: longitude }
+                }));
+                // Optionally verify location name with reverse geocoding here
+                setFormData(prev => ({
+                    ...prev,
+                    location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` // Temporary display, user can edit
+                }));
+                setLocationLoading(false);
+            },
+            (error) => {
+                console.error("Error getting location:", error);
+                setLocationError('Unable to retrieve your location. Please enter manually.');
+                setLocationLoading(false);
+            }
+        );
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -75,6 +109,7 @@ export default function Register() {
                 password: formData.password,
                 role,
                 location: formData.location,
+                coordinates: formData.coordinates,
                 establishmentYear: formData.establishmentYear,
                 // Send relevant types based on role
                 wasteTypes: role === 'supplier' ? formData.wasteTypes : undefined,
@@ -187,6 +222,25 @@ export default function Register() {
                         placeholder="e.g. Pune, Maharashtra"
                         required
                     />
+
+                    <div style={{ marginBottom: '1rem' }}>
+                        <button
+                            type="button"
+                            onClick={getLocation}
+                            disabled={locationLoading}
+                            style={{
+                                background: '#f0f0f0',
+                                border: '1px solid #ccc',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '4px',
+                                cursor: locationLoading ? 'not-allowed' : 'pointer',
+                                fontSize: '0.9rem'
+                            }}
+                        >
+                            {locationLoading ? 'Getting Location...' : '📍 Use Current Location'}
+                        </button>
+                        {locationError && <p style={{ color: 'red', fontSize: '0.8rem', marginTop: '0.5rem' }}>{locationError}</p>}
+                    </div>
 
                     <Input
                         label="Establishment Year"

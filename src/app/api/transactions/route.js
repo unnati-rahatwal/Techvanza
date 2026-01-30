@@ -60,3 +60,34 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
+
+export async function GET(request) {
+    try {
+        await dbConnect();
+        const { searchParams } = new URL(request.url);
+        const buyerId = searchParams.get('buyerId');
+        const supplierId = searchParams.get('supplierId');
+
+        let query = {};
+
+        if (buyerId) {
+            query.buyer = buyerId;
+        } else if (supplierId) {
+            query.supplier = supplierId;
+        } else {
+            return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+        }
+
+        const transactions = await Transaction.find(query)
+            .populate('listing', 'title wasteType imageUrl')
+            .populate('supplier', 'name')
+            .populate('buyer', 'name')
+            .sort({ timestamp: -1 });
+
+        return NextResponse.json({ transactions }, { status: 200 });
+
+    } catch (error) {
+        console.error('Error fetching transactions:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}

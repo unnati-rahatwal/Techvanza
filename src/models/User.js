@@ -27,6 +27,10 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Please provide a location'],
     },
+    coordinates: {
+        lat: Number,
+        lng: Number
+    },
     establishmentYear: {
         type: String, // Kept as string to match previous implementation, could be Number
         required: [true, 'Please provide establishment year'],

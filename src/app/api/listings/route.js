@@ -62,20 +62,53 @@ export async function GET(request) {
         const type = searchParams.get('type');
         const supplier = searchParams.get('supplier');
         const limit = searchParams.get('limit');
+        const minPrice = searchParams.get('minPrice');
+        const maxPrice = searchParams.get('maxPrice');
+        const location = searchParams.get('location');
+        const sortBy = searchParams.get('sortBy'); // 'newest', 'priceObs', 'priceDesc', 'qtyDesc'
 
         let query = { status: 'available' };
 
-        if (type) {
+        // Filter by Waste Type
+        if (type && type !== 'All') {
             query.wasteType = type;
         }
 
+        // Filter by Supplier (for dashboard)
         if (supplier) {
-            delete query.status; // Sellers want to see all their listings, even sold ones
+            delete query.status; // Show all for supplier
             query.supplier = supplier;
         }
 
-        let listingsQuery = Listing.find(query).sort({ createdAt: -1 }).populate('supplier', 'name location');
+        // Filter by Price Range
+        if (minPrice || maxPrice) {
+            query.pricePerKg = {};
+            if (minPrice) query.pricePerKg.$gte = Number(minPrice);
+            if (maxPrice) query.pricePerKg.$lte = Number(maxPrice);
+        }
 
+        // Filter by Location (Case-insensitive partial match)
+        if (location) {
+            query.location = { $regex: location, $options: 'i' };
+        }
+
+        let listingsQuery = Listing.find(query);
+
+        // Sorting
+        if (sortBy === 'priceAsc') {
+            listingsQuery = listingsQuery.sort({ pricePerKg: 1 });
+        } else if (sortBy === 'priceDesc') {
+            listingsQuery = listingsQuery.sort({ pricePerKg: -1 });
+        } else if (sortBy === 'qtyDesc') {
+            listingsQuery = listingsQuery.sort({ quantity: -1 });
+        } else {
+            listingsQuery = listingsQuery.sort({ createdAt: -1 }); // Default: Newest first
+        }
+
+        // Population
+        listingsQuery = listingsQuery.populate('supplier', 'name location');
+
+        // Limit
         if (limit) {
             listingsQuery = listingsQuery.limit(Number(limit));
         }
