@@ -1,0 +1,25 @@
+[
+  {
+    "id": "1769751469255",
+    "email": "supplier_1769751468524@test.com",
+    "password": "password123",
+    "role": "supplier",
+    "location": "Pune",
+    "establishmentYear": "2020",
+    "wasteTypes": [
+      "Plastic",
+      "Paper"
+    ]
+  },
+  {
+    "id": "1769751469291",
+    "email": "buyer_1769751468524@test.com",
+    "password": "password123",
+    "role": "buyer",
+    "location": "Mumbai",
+    "establishmentYear": "2019",
+    "interestTypes": [
+      "Plastic"
+    ]
+  }
+]
