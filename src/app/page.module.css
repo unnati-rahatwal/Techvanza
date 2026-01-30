@@ -1,175 +1,216 @@
 .hero {
   position: relative;
-  padding: 8rem 0 6rem;
+  padding: 10rem 0 8rem;
   text-align: center;
   overflow: hidden;
-  background:
-    radial-gradient(
-      circle at top right,
-      rgba(13, 148, 136, 0.1),
-      transparent 40%
-    ),
-    radial-gradient(
-      circle at bottom left,
-      rgba(245, 158, 11, 0.1),
-      transparent 40%
-    );
+}
+
+/* Specific glows for hero background */
+.hero::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(
+    circle,
+    rgba(13, 148, 136, 0.2) 0%,
+    transparent 70%
+  );
+  z-index: 1;
+  pointer-events: none;
 }
 
 .heroContent {
   position: relative;
   z-index: 10;
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
 .heroTitle {
-  font-size: 4rem;
+  font-size: 5rem;
   line-height: 1.1;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  margin-bottom: 1.5rem;
-  background: linear-gradient(
-    135deg,
-    var(--text-primary) 0%,
-    var(--primary-color) 100%
-  );
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 2rem;
+  background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.1));
 }
 
 .heroDescription {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   color: var(--text-secondary);
-  margin-bottom: 2.5rem;
+  margin-bottom: 3rem;
   line-height: 1.6;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .heroActions {
   display: flex;
-  gap: 1rem;
+  gap: 1.5rem;
   justify-content: center;
 }
 
 .features {
-  padding: 6rem 0;
-  background-color: var(--surface);
+  padding: 8rem 0;
+  position: relative;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 2rem;
-  margin-top: 3rem;
+  margin-top: 4rem;
 }
 
 .card {
-  padding: 2rem;
-  border-radius: var(--radius);
-  background: var(--background);
-  border: 1px solid var(--border);
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
+  padding: 2.5rem;
+  border-radius: var(--radius-lg);
+  background: var(--surface-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  transition: all 0.4s ease;
 }
 
 .card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--primary-color);
+  transform: translateY(-10px);
+  background: var(--surface-glass-hover);
+  border-color: rgba(56, 239, 125, 0.3);
+  box-shadow: 0 10px 40px -10px rgba(56, 239, 125, 0.2);
 }
 
 .cardIcon {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  color: var(--primary-color);
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.2));
 }
 
 .cardTitle {
   font-size: 1.5rem;
   font-weight: 700;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  color: #fff;
 }
 
 .cardText {
   color: var(--text-secondary);
+  font-size: 1.05rem;
+  line-height: 1.7;
 }
 
 .howItWorks {
-  padding: 6rem 0;
+  padding: 8rem 0;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(13, 148, 136, 0.05),
+    transparent
+  );
 }
 
 .stepList {
   display: flex;
   justify-content: center;
-  gap: 2rem;
+  gap: 3rem;
   flex-wrap: wrap;
+  margin-top: 5rem;
 }
 
 .step {
   text-align: center;
   flex: 1;
-  min-width: 250px;
+  min-width: 280px;
   position: relative;
+  padding: 2rem;
+  border-radius: var(--radius-md);
+  transition: all 0.3s ease;
+}
+
+.step:hover {
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .stepNumber {
-  width: 3rem;
-  height: 3rem;
-  background: var(--primary-color);
+  width: 4rem;
+  height: 4rem;
+  background: var(--primary-gradient);
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 1.25rem;
+  font-weight: 800;
+  font-size: 1.5rem;
   margin: 0 auto 1.5rem;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 0 20px rgba(56, 239, 125, 0.4);
+}
+
+.step h3 {
+  color: white;
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.step p {
+  color: var(--text-secondary);
 }
 
 .cta {
-  padding: 5rem 0;
+  padding: 8rem 0;
   text-align: center;
-  background: var(--primary-color);
-  color: white;
-  margin-top: 4rem;
+  background: relative;
+  overflow: hidden;
 }
 
 .ctaTitle {
-  font-size: 2.5rem;
+  font-size: 3.5rem;
   font-weight: 800;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  color: white;
 }
 
 .ctaText {
   font-size: 1.25rem;
-  margin-bottom: 2rem;
-  opacity: 0.9;
+  margin-bottom: 3rem;
+  color: var(--text-secondary);
 }
 
 .ctaButton {
-  background: white;
-  color: var(--primary-color);
+  background: var(--primary-gradient);
+  color: white;
   font-weight: 700;
-  padding: 1rem 2.5rem;
-  border-radius: var(--radius);
-  font-size: 1.125rem;
+  padding: 1.25rem 3rem;
+  border-radius: 2rem;
+  font-size: 1.25rem;
   border: none;
-  transition: transform 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+  cursor: pointer;
+  box-shadow: 0 0 30px rgba(56, 239, 125, 0.4);
 }
 
 .ctaButton:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 50px rgba(56, 239, 125, 0.6);
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .heroTitle {
-    font-size: 2.5rem;
+    font-size: 3rem;
   }
   .heroActions {
     flex-direction: column;
+  }
+  .grid {
+    grid-template-columns: 1fr;
   }
 }

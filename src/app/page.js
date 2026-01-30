@@ -1,19 +1,12 @@
 import Link from 'next/link';
+import Navbar from '../components/Navbar';
 import styles from './page.module.css';
 
 export default function Home() {
   return (
     <main>
-      {/* Navigation */}
-      <nav className="container" style={{ padding: '1.5rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--primary-color)' }}>
-          EcoLoop<span style={{ color: 'var(--text-secondary)', fontSize: '1.5rem' }}>.</span>
-        </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <Link href="/login" className="btn btn-outline" style={{ padding: '0.5rem 1.25rem' }}>Log In</Link>
-          <Link href="/register" className="btn btn-primary" style={{ padding: '0.5rem 1.25rem' }}>Sign Up</Link>
-        </div>
-      </nav>
+      {/* Shared Navbar */}
+      <Navbar />
 
       {/* Hero Section */}
       <section className={styles.hero}>

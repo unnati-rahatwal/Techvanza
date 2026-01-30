@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Input from '../../components/Input';
@@ -19,6 +19,23 @@ export default function Register() {
         wasteTypes: []
     });
 
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const router = useRouter();
+
+    useEffect(() => {
+        // Redirect if already logged in
+        const user = localStorage.getItem('user');
+        if (user) {
+            try {
+                const parsedUser = JSON.parse(user);
+                router.push(`/dashboard/${parsedUser.role}`);
+            } catch (e) {
+                // Invalid user data, ignore
+            }
+        }
+    }, [router]);
+
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -26,10 +43,6 @@ export default function Register() {
     const handleWasteTypeChange = (selected) => {
         setFormData({ ...formData, wasteTypes: selected });
     };
-
-    const router = useRouter(); // Initialize router
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();

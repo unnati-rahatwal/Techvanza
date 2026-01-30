@@ -7,7 +7,7 @@ import Button from '../../components/Button';
 import styles from '../../styles/auth.module.css';
 
 export default function Login() {
-    const router = useRouter(); // Initialize router
+    const router = useRouter();
     const [formData, setFormData] = useState({
         email: '',
         password: ''
@@ -41,7 +41,13 @@ export default function Login() {
             localStorage.setItem('user', JSON.stringify(data.user));
 
             console.log("Login successful", data);
-            router.push('/'); // Redirect to dashboard
+
+            if (data.user && data.user.role) {
+                router.push(`/dashboard/${data.user.role}`);
+            } else {
+                router.push('/');
+            }
+
         } catch (err) {
             console.error(err);
             setError(err.message);
