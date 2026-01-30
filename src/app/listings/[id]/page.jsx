@@ -6,6 +6,17 @@ import Navbar from '@/components/Navbar';
 import Button from '@/components/Button';
 import styles from './page.module.css';
 
+const getWasteImage = (type) => {
+    const typeLower = type?.toLowerCase() || '';
+    if (typeLower.includes('plastic')) return 'https://placehold.co/600x400/22c55e/ffffff?text=Plastic+Waste';
+    if (typeLower.includes('paper')) return 'https://placehold.co/600x400/f59e0b/ffffff?text=Paper+Waste';
+    if (typeLower.includes('metal')) return 'https://placehold.co/600x400/64748b/ffffff?text=Metal+Scrap';
+    if (typeLower.includes('glass')) return 'https://placehold.co/600x400/0ea5e9/ffffff?text=Glass+Waste';
+    if (typeLower.includes('organic')) return 'https://placehold.co/600x400/84cc16/ffffff?text=Organic+Waste';
+    if (typeLower.includes('e-waste')) return 'https://placehold.co/600x400/a855f7/ffffff?text=E-Waste';
+    return 'https://placehold.co/600x400/10b981/ffffff?text=Eco+Waste';
+};
+
 export default function ListingDetails({ params }) {
     // Unwrap params using React.use()
     const resolvedParams = use(params);
@@ -41,6 +52,17 @@ export default function ListingDetails({ params }) {
         if (id) fetchListing();
     }, [id]);
 
+    // Load Razorpay Script
+    const loadRazorpay = () => {
+        return new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.body.appendChild(script);
+        });
+    };
+
     const handleBuy = async () => {
         if (!currentUser) {
             router.push('/login');
@@ -52,32 +74,80 @@ export default function ListingDetails({ params }) {
             return;
         }
 
-        if (!confirm(`Are you sure you want to buy ${listing.quantity}kg of ${listing.title} for ₹${listing.pricePerKg * listing.quantity}?`)) {
+        const res = await loadRazorpay();
+        if (!res) {
+            alert('Razorpay SDK failed to load. Are you online?');
             return;
         }
 
         setBuying(true);
+
         try {
-            const res = await fetch('/api/transactions', {
+            // 1. Create Order
+            const orderRes = await fetch('/api/payment/order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     listingId: listing._id,
                     buyerId: currentUser._id,
-                    quantity: listing.quantity // Buying full quantity for MVP
+                    quantity: listing.quantity // Buying full qty for MVP
                 })
             });
 
-            const data = await res.json();
-            if (res.ok) {
-                alert('Purchase successful!');
-                router.push('/dashboard/buyer');
-            } else {
-                alert(data.error || 'Purchase failed');
-            }
+            const orderData = await orderRes.json();
+            if (!orderRes.ok) throw new Error(orderData.error);
+
+            // 2. Open Razorpay Options
+            const options = {
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Add this to env/next.config
+                amount: orderData.amount,
+                currency: orderData.currency,
+                name: 'Techvanza Waste Market',
+                description: `Purchase of ${listing.title}`,
+                order_id: orderData.id,
+                handler: async function (response) {
+                    // 3. Verify Payment
+                    const verifyRes = await fetch('/api/payment/verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            amount: orderData.amount,
+                            notes: {
+                                listingId: listing._id,
+                                buyerId: currentUser._id,
+                                supplierId: listing.supplier?._id,
+                                quantity: listing.quantity
+                            }
+                        })
+                    });
+
+                    const verifyData = await verifyRes.json();
+                    if (verifyData.success) {
+                        alert('Payment Successful! Carbon Credits Generated 🌿');
+                        router.push('/dashboard/buyer');
+                    } else {
+                        alert('Payment Verification Failed');
+                    }
+                },
+                prefill: {
+                    name: currentUser.name,
+                    email: currentUser.email,
+                    contact: currentUser.mobile
+                },
+                theme: {
+                    color: '#3399cc'
+                }
+            };
+
+            const paymentObject = new window.Razorpay(options);
+            paymentObject.open();
+
         } catch (err) {
             console.error(err);
-            alert('Something went wrong');
+            alert('Purchase flow failed: ' + err.message);
         } finally {
             setBuying(false);
         }
@@ -93,11 +163,15 @@ export default function ListingDetails({ params }) {
                 <div className={styles.grid}>
                     {/* Image Section */}
                     <div className={styles.imageSection}>
-                        {listing.imageUrl ? (
-                            <img src={listing.imageUrl} alt={listing.title} className={styles.image} />
-                        ) : (
-                            <div className={styles.placeholder}>No Image Available</div>
-                        )}
+                        <img
+                            src={listing.imageUrl || getWasteImage(listing.wasteType)}
+                            alt={listing.title}
+                            className={styles.image}
+                            onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = getWasteImage(listing.wasteType);
+                            }}
+                        />
                     </div>
 
                     {/* Details Section */}

@@ -1,81 +1,97 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import dbConnect from '@/lib/mongodb';
-import Order from '@/models/Order'; // Need to create this model
-import Requirement from '@/models/Requirement'; // To update stock
-import { recordTransactionOnChain } from '@/lib/blockchain';
+import Transaction from '@/models/Transaction';
+import Listing from '@/models/Listing';
+import Credit from '@/models/Credit';
+import { calculateCarbonImpact } from '@/lib/gemini';
 
 export async function POST(request) {
     try {
         await dbConnect();
-        const body = await request.json();
-        const { 
-            razorpay_order_id, 
-            razorpay_payment_id, 
+        const text = await request.text();
+        const data = JSON.parse(text);
+        const {
+            razorpay_order_id,
+            razorpay_payment_id,
             razorpay_signature,
-            listingId,
-            quantity,
-            buyerId, 
-            amount
-        } = body;
+            notes,
+            amount // Optional, passed from frontend for record
+        } = data;
 
         // 1. Verify Signature
-        const bodyData = razorpay_order_id + "|" + razorpay_payment_id;
+        const body = razorpay_order_id + "|" + razorpay_payment_id;
         const expectedSignature = crypto
             .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-            .update(bodyData.toString())
+            .update(body.toString())
             .digest('hex');
 
-        if (expectedSignature === razorpay_signature) {
-            // 2. Fetch Listing to get Supplier ID
-            const listing = await Requirement.findById(listingId);
-            const supplierId = listing ? listing.userId : 'unknown';
-
-            // 3. Record on Blockchain (Sepolia)
-            const blockchainData = {
-                buyer: buyerId,
-                supplier: supplierId,
-                amount: amount, // In INR
-                listingId: listingId,
-                timestamp: Date.now()
-            };
-
-            const txHash = await recordTransactionOnChain(blockchainData);
-
-            // 4. Save Order to Database
-            const newOrder = await Order.create({
-                buyerId,
-                supplierId,
-                listingId,
-                quantity,
-                totalPrice: amount,
-                paymentId: razorpay_payment_id,
-                orderId: razorpay_order_id,
-                blockchainTxHash: txHash,
-                status: 'completed'
-            });
-
-            // 5. Update Listing Quantity (Reduce Stock)
-            if (listing) {
-                listing.quantity = Math.max(0, listing.quantity - quantity);
-                if (listing.quantity === 0) {
-                    listing.status = 'sold_out';
-                }
-                await listing.save();
-            }
-
-            return NextResponse.json({ 
-                success: true, 
-                message: 'Payment verified and recorded', 
-                blockchainTxHash: txHash 
-            });
-
-        } else {
-            return NextResponse.json({ success: false, error: 'Invalid signature' }, { status: 400 });
+        if (expectedSignature !== razorpay_signature) {
+            return NextResponse.json({ error: 'Invalid Signature' }, { status: 400 });
         }
+
+        const { listingId, buyerId, supplierId, quantity } = notes;
+
+        // 2. Create Transaction Record
+        // Assuming amount is in paisa, convert to INR
+        const totalPrice = amount ? amount / 100 : 0;
+
+        const transaction = await Transaction.create({
+            listing: listingId,
+            buyer: buyerId,
+            supplier: supplierId,
+            quantity: Number(quantity),
+            totalPrice: totalPrice,
+            status: 'completed',
+            paymentId: razorpay_payment_id,
+            timestamp: new Date()
+        });
+
+        // 3. Update Listing (Mark sold or reduce quantity)
+        // For MVP, marking as sold if stock is 0? Or just decrease.
+        // Let's assume stock management for now.
+        const listing = await Listing.findById(listingId);
+        if (listing) {
+            listing.quantity -= Number(quantity);
+            if (listing.quantity <= 0) {
+                listing.status = 'sold';
+            }
+            await listing.save();
+        }
+
+        // 4. Calculate Credits & Tax Benefits Automatically
+        try {
+            // Re-using the logic from api/credits/calculate or calling function directly
+            // Direct function call is faster here
+            const wasteType = listing?.wasteType || 'General';
+            const impactData = await calculateCarbonImpact(wasteType, Number(quantity));
+
+            const creditsEarned = Math.floor(impactData.savedCO2 / 100) || 1;
+            const taxBenefitValue = creditsEarned * 500;
+
+            await Credit.create({
+                userId: supplierId, // Supplier gets the credit? Or Buyer? 
+                // Usually Recycling Producer (Supplier) gets credit OR Buyer gets offset. 
+                // Let's give it to Supplier for now based on user request "credits for sellers".
+                transactionId: transaction._id,
+                wasteType: wasteType,
+                quantity: Number(quantity),
+                carbonSaved: impactData.savedCO2,
+                impactDescription: impactData.impactDescription,
+                creditsEarned,
+                taxBenefitValue,
+                certificationLevel: 'Bronze'
+            });
+
+        } catch (creditError) {
+            console.error("Credit calc failed (background):", creditError);
+            // Don't fail the verification response
+        }
+
+        return NextResponse.json({ success: true, transactionId: transaction._id }, { status: 200 });
 
     } catch (error) {
         console.error("Verification Error:", error);
-        return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ error: 'Verification failed' }, { status: 500 });
     }
 }
