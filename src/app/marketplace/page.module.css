@@ -1,54 +1,169 @@
 /* CSS Module for Marketplace */
 .container {
   min-height: 100vh;
-  background: #0f172a;
-  color: white;
+  /* background handled by global */
 }
 
-.content {
+.mainLayout {
+  display: flex;
   max-width: 1400px;
   margin: 0 auto;
   padding: 2rem;
+  gap: 2rem;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 280px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  height: fit-content;
+  position: sticky;
+  top: 100px;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.filterHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-glass);
+  padding-bottom: 0.5rem;
+}
+
+.filterHeader h2 {
+  font-size: 1.2rem;
+  color: white;
+  margin: 0;
+}
+
+.closeBtn {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.filterGroup {
+  margin-bottom: 1.5rem;
+}
+
+.filterGroup label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.row span {
+  color: var(--text-secondary);
+}
+
+/* Main Content */
+.content {
+  flex: 1;
 }
 
 .header {
-  margin-bottom: 3rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
 }
 
 .header h1 {
   font-size: 2.5rem;
-  background: linear-gradient(to right, #ffffff, #94a3b8);
+  font-weight: 800;
+  color: white;
+  margin: 0;
+  background: linear-gradient(to right, #fff, #94a3b8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  margin: 0;
 }
 
+.filterToggle {
+  display: none;
+  background: var(--surface-glass);
+  color: white;
+  border: 1px solid var(--border-glass);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.loading,
+.empty {
+  text-align: center;
+  padding: 4rem;
+  color: var(--text-secondary);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--primary-light);
+  animation: spin 1s ease-in-out infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Grid */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.cardLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
 }
 
 .card {
-  background: #1e293b;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
-  display: flex;
-  flex-direction: column;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  height: 100%;
 }
 
 .card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  border-color: rgba(56, 239, 125, 0.3);
 }
 
 .imageContainer {
-  height: 200px;
-  background: #334155;
+  height: 180px;
+  background: rgba(0, 0, 0, 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -57,53 +172,117 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s;
+  transition: transform 0.5s ease;
 }
 
 .card:hover .image {
-  transform: scale(1.05);
+  transform: scale(1.1);
 }
 
-.details {
-  padding: 1.5rem;
-  flex-grow: 1;
+.placeholder {
+  height: 100%;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
 }
 
-.tag {
-  display: inline-block;
-  background: rgba(56, 239, 125, 0.1);
-  color: #38ef7d;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  align-self: flex-start;
+.typeBadge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(4px);
 }
 
-.title {
-  font-size: 1.25rem;
-  margin: 0.5rem 0;
-  font-weight: 700;
+.cardBody {
+  padding: 1.25rem;
 }
 
-.infoRow {
+.cardBody h3 {
+  margin: 0 0 0.75rem 0;
+  color: white;
+  font-size: 1.1rem;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metaRow {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
-  color: #94a3b8;
-  font-size: 0.95rem;
+  align-items: baseline;
+  margin-bottom: 0.75rem;
 }
 
-.price {
-  font-size: 1.5rem;
-  color: white;
-  font-weight: bold;
-  margin: 1rem 0;
+.priceTag {
+  color: var(--accent-color);
+  font-weight: 700;
+  font-size: 1.1rem;
 }
 
-.actions {
-  margin-top: auto;
+.symbol {
+  font-size: 0.9rem;
+}
+.unit {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.qty {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.locationRow {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .mainLayout {
+    flex-direction: column;
+    padding: 1rem;
+  }
+
+  .filterToggle {
+    display: block;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    z-index: 100;
+    transform: translateY(-100%);
+    border-radius: 0;
+    padding-top: 4rem;
+    border: none;
+  }
+
+  .sidebar.show {
+    transform: translateY(0);
+  }
+
+  .closeBtn {
+    display: block;
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+  }
 }
