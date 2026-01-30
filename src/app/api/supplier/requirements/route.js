@@ -12,7 +12,7 @@ export async function GET(request) {
         const userId = searchParams.get('userId');
 
         let query = { status: 'active' };
-        
+
         // If userId is provided, fetch specific supplier's listings
         if (userId) {
             query = { userId };
@@ -43,7 +43,7 @@ export async function POST(request) {
         }
 
         let imageUrl = '';
-        
+
         // Upload image to Cloudinary if provided
         if (image) {
             try {

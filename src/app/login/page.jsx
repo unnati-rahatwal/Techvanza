@@ -1,40 +1,27 @@
-'use client';
-
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+"use client";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import styles from './page.module.css';
+import Input from '../../components/Input';
+import Button from '../../components/Button';
+import styles from '../../styles/auth.module.css';
 
-function LoginForm() {
+export default function Login() {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const [formData, setFormData] = useState({ email: '', password: '' });
+    const [formData, setFormData] = useState({
+        email: '',
+        password: ''
+    });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
-
-    useEffect(() => {
-        // Redirect if already logged in
-        const user = localStorage.getItem('user');
-        if (user) {
-            const parsedUser = JSON.parse(user);
-            router.push(`/dashboard/${parsedUser.role}`);
-        }
-
-        if (searchParams.get('registered')) {
-            setSuccess('Registration successful! Please log in.');
-        }
-    }, [searchParams, router]);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-        setSuccess('');
         setLoading(true);
 
         try {
@@ -44,25 +31,25 @@ function LoginForm() {
                 body: JSON.stringify(formData)
             });
 
+            const data = await res.json();
+
             if (!res.ok) {
-                const data = await res.json();
                 throw new Error(data.error || 'Login failed');
             }
 
-            const data = await res.json();
-            // Store user in localStorage for demo purposes
+            // Store user in localStorage (demo)
             localStorage.setItem('user', JSON.stringify(data.user));
 
-            // Redirect to role-based dashboard
-            if (data.user.role === 'supplier') {
-                router.push('/dashboard/supplier');
-            } else if (data.user.role === 'buyer') {
-                router.push('/dashboard/buyer');
+            console.log("Login successful", data);
+
+            if (data.user && data.user.role) {
+                router.push(`/dashboard/${data.user.role}`);
             } else {
-                router.push('/'); // Fallback
+                router.push('/');
             }
 
         } catch (err) {
+            console.error(err);
             setError(err.message);
         } finally {
             setLoading(false);
@@ -70,59 +57,52 @@ function LoginForm() {
     };
 
     return (
-        <div className={styles.container}>
-            <div className={styles.card}>
-                <h1 className={styles.title}>Welcome Back</h1>
-                <p className={styles.subtitle}>Access the circular economy marketplace</p>
+        <div className={styles.authContainer}>
+            <div className={styles.authCard}>
+                <div className={styles.authHeader}>
+                    <h1 className={`${styles.authTitle} text-gradient`}>Welcome Back</h1>
+                    <p className={styles.authSubtitle}>Access the circular economy marketplace</p>
+                </div>
 
-                {success && <div className={styles.success}>{success}</div>}
-
-                <form onSubmit={handleSubmit}>
-                    <div className={styles.formGroup}>
-                        <label className={styles.label}>Email Address</label>
-                        <input
-                            type="email"
+                <form onSubmit={handleSubmit} className="glass-panel" style={{ padding: '2rem' }}>
+                    <div style={{ display: 'grid', gap: '1rem' }}>
+                        <Input
+                            label="Email Address"
                             name="email"
-                            required
-                            className={styles.input}
-                            value={formData.email}
-                            onChange={handleChange}
+                            type="email"
                             placeholder="Enter your email"
-                        />
-                    </div>
-
-                    <div className={styles.formGroup}>
-                        <label className={styles.label}>Password</label>
-                        <input
-                            type="password"
-                            name="password"
-                            required
-                            className={styles.input}
-                            value={formData.password}
                             onChange={handleChange}
-                            placeholder="Enter your password"
+                            required
                         />
+                        <Input
+                            label="Password"
+                            name="password"
+                            type="password"
+                            placeholder="Enter your password"
+                            onChange={handleChange}
+                            required
+                        />
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <a href="#" style={{ color: 'var(--primary)', fontSize: '0.85rem' }}>Forgot Password?</a>
+                        </div>
+
+                        <div style={{ marginTop: '0.5rem' }}>
+                            {error && <p style={{ color: '#ff4d4d', fontSize: '0.9rem', textAlign: 'center', marginBottom: '0.5rem' }}>{error}</p>}
+                            <Button type="submit" variant="primary">
+                                {loading ? 'Logging in...' : 'Log In'}
+                            </Button>
+                        </div>
                     </div>
 
-                    {error && <p className={styles.error}>{error}</p>}
-
-                    <button type="submit" className={styles.submitButton} disabled={loading}>
-                        {loading ? 'Logging in...' : 'Log In'}
-                    </button>
+                    <div style={{ textAlign: 'center', marginTop: '1.5rem', color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>
+                        New to the platform?{' '}
+                        <Link href="/register" style={{ color: 'var(--primary)', fontWeight: '500' }}>
+                            Create Account
+                        </Link>
+                    </div>
                 </form>
-
-                <p className={styles.registerLink}>
-                    Don&apos;t have an account? <Link href="/register" className={styles.link}>Sign Up</Link>
-                </p>
             </div>
         </div>
-    );
-}
-
-export default function Login() {
-    return (
-        <Suspense fallback={<div>Loading...</div>}>
-            <LoginForm />
-        </Suspense>
     );
 }

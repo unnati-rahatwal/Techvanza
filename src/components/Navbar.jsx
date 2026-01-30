@@ -67,7 +67,7 @@ export default function Navbar() {
                         </Link>
 
                         {user.role === 'supplier' ? (
-                            <Link href="/listings/create" style={{ color: '#38ef7d', textDecoration: 'none', fontWeight: '600' }}>
+                            <Link href="/listings/create" style={{ color: '#38ef7d', textDecoration: 'none', fontWeight: '600', border: '1px solid rgba(56, 239, 125, 0.5)', padding: '6px 12px', borderRadius: '20px' }}>
                                 + Add Listing
                             </Link>
                         ) : (
@@ -84,16 +84,16 @@ export default function Navbar() {
                                     width: '40px',
                                     height: '40px',
                                     borderRadius: '50%',
-                                    background: 'linear-gradient(135deg, #134e5e 0%, #71b280 100%)',
+                                    background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
                                     display: 'flex',
                                     justifyContent: 'center',
                                     alignItems: 'center',
                                     cursor: 'pointer',
                                     fontWeight: 'bold',
-                                    fontSize: '1rem',
-                                    boxShadow: '0 0 15px rgba(56, 239, 125, 0.3)',
+                                    fontSize: '1.2rem',
+                                    boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
                                     color: 'white',
-                                    border: '2px solid rgba(255,255,255,0.1)'
+                                    border: '1px solid rgba(255,255,255,0.1)'
                                 }}
                             >
                                 {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
@@ -149,6 +149,6 @@ export default function Navbar() {
                     </div>
                 )}
             </div>
-        </nav >
+        </nav>
     );
 }

@@ -1,81 +1,83 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import dbConnect from '@/lib/mongodb';
-import Order from '@/models/Order'; // Need to create this model
-import Requirement from '@/models/Requirement'; // To update stock
-import { recordTransactionOnChain } from '@/lib/blockchain';
+import Listing from '@/models/Listing';
+import User from '@/models/User';
+import Order from '@/models/Order';
+import { recordBlockchainPurchase } from '@/utils/blockchain';
 
 export async function POST(request) {
     try {
         await dbConnect();
         const body = await request.json();
-        const { 
-            razorpay_order_id, 
-            razorpay_payment_id, 
+        const {
+            razorpay_order_id,
+            razorpay_payment_id,
             razorpay_signature,
-            listingId,
-            quantity,
-            buyerId, 
-            amount
+            notes
         } = body;
 
         // 1. Verify Signature
-        const bodyData = razorpay_order_id + "|" + razorpay_payment_id;
-        const expectedSignature = crypto
-            .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-            .update(bodyData.toString())
+        const secret = process.env.RAZORPAY_KEY_SECRET;
+        const generated_signature = crypto
+            .createHmac('sha256', secret)
+            .update(razorpay_order_id + "|" + razorpay_payment_id)
             .digest('hex');
 
-        if (expectedSignature === razorpay_signature) {
-            // 2. Fetch Listing to get Supplier ID
-            const listing = await Requirement.findById(listingId);
-            const supplierId = listing ? listing.userId : 'unknown';
-
-            // 3. Record on Blockchain (Sepolia)
-            const blockchainData = {
-                buyer: buyerId,
-                supplier: supplierId,
-                amount: amount, // In INR
-                listingId: listingId,
-                timestamp: Date.now()
-            };
-
-            const txHash = await recordTransactionOnChain(blockchainData);
-
-            // 4. Save Order to Database
-            const newOrder = await Order.create({
-                buyerId,
-                supplierId,
-                listingId,
-                quantity,
-                totalPrice: amount,
-                paymentId: razorpay_payment_id,
-                orderId: razorpay_order_id,
-                blockchainTxHash: txHash,
-                status: 'completed'
-            });
-
-            // 5. Update Listing Quantity (Reduce Stock)
-            if (listing) {
-                listing.quantity = Math.max(0, listing.quantity - quantity);
-                if (listing.quantity === 0) {
-                    listing.status = 'sold_out';
-                }
-                await listing.save();
-            }
-
-            return NextResponse.json({ 
-                success: true, 
-                message: 'Payment verified and recorded', 
-                blockchainTxHash: txHash 
-            });
-
-        } else {
-            return NextResponse.json({ success: false, error: 'Invalid signature' }, { status: 400 });
+        if (generated_signature !== razorpay_signature) {
+            return NextResponse.json({ error: 'Invalid Signature' }, { status: 400 });
         }
+
+        // 2. Update Database
+        const { listingId, buyerId, supplierId, quantity } = notes;
+
+        // Fetch listing to get price
+        const listing = await Listing.findByIdAndUpdate(listingId, {
+            status: 'sold',
+            buyer: buyerId
+        }, { new: true });
+
+        if (!listing) {
+            return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
+        }
+
+        // Calculate total price
+        const totalPrice = listing.pricePerKg * quantity;
+
+        // 3. Create Order Record
+        const order = await Order.create({
+            buyerId,
+            supplierId: supplierId || listing.supplier,
+            listingId,
+            quantity,
+            totalPrice,
+            status: 'completed',
+            paymentId: razorpay_payment_id,
+            timestamp: new Date()
+        });
+
+        // 4. Write to Blockchain (Full Supply Chain Tracking)
+        // Hash IDs for privacy
+        const buyerHash = crypto.createHash('sha256').update(buyerId).digest('hex');
+
+        // This process might take time, so we trigger it. In prod, use a queue.
+        // For Hackathon, await it or fire-and-forget (awaiting for demo proof)
+        const txHash = await recordBlockchainPurchase(listingId, buyerHash);
+
+        // 5. Update order with blockchain hash
+        if (txHash) {
+            await Order.findByIdAndUpdate(order._id, { blockchainTxHash: txHash });
+        }
+
+        return NextResponse.json({
+            success: true,
+            txHash,
+            orderId: order._id,
+            message: 'Payment verified and recorded on blockchain'
+        });
 
     } catch (error) {
         console.error("Verification Error:", error);
-        return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

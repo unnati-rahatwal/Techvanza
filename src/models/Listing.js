@@ -34,6 +34,11 @@ const ListingSchema = new mongoose.Schema({
         type: String,
         required: [false, 'Image is optional']
     },
+    buyer: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: false
+    },
     status: {
         type: String,
         enum: ['available', 'sold'],
