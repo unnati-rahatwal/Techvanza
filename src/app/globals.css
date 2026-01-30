@@ -35,8 +35,13 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+}
+}
+
+/* Better placeholder visibility for inputs */
+input::placeholder,
+select::placeholder,
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.7) !important;
+  opacity: 1;
 }
