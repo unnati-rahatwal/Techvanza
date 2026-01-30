@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Listing from '@/models/Listing';
+import User from '@/models/User'; // Required for populate to work
 
 export async function GET(request, { params }) {
     try {

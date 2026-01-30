@@ -1,43 +1,49 @@
 import { NextResponse } from 'next/server';
-import razorpay from '@/lib/razorpay';
+import Razorpay from 'razorpay';
+import { v4 as uuidv4 } from 'uuid';
 import dbConnect from '@/lib/mongodb';
-import Requirement from '@/models/Listing'; // Mapped to Listing model
-import Transaction from '@/models/Transaction'; // To log intent? Or just Listing
+import Listing from '@/models/Listing';
 
 export async function POST(request) {
     try {
-        await dbConnect();
-        const body = await request.json();
-        const { listingId, quantity, userId } = body;
+        const { listingId, quantity } = await request.json();
 
-        // Fetch listing to calculate amount
-        const listing = await Requirement.findById(listingId);
+        // Fetch listing to get price
+        await dbConnect();
+        const listing = await Listing.findById(listingId);
 
         if (!listing) {
             return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
         }
 
-        // Calculate total amount (Price per kg * quantity)
-        const price = listing.pricePerKg;
-        const amount = Math.round(price * quantity * 100); // Amount in paisa
+        // Calculate total amount
+        const amount = listing.pricePerKg * (quantity || listing.quantity);
 
+        // 1. Initialize Razorpay
+        const razorpay = new Razorpay({
+            key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET,
+        });
+
+        // 2. Create Order options
         const options = {
-            amount: amount,
-            currency: "INR",
-            receipt: `rcpt_${uuidv4().slice(0, 20)}`, // Max 40 chars allowed
-            notes: {
-                listingId: listingId,
-                buyerId: userId,
-                supplierId: listing.userId.toString()
-            }
+            amount: Math.round(amount * 100), // convert to paisa
+            currency: 'INR',
+            receipt: uuidv4(),
+            payment_capture: 1, // Auto capture
         };
 
+        // 3. Create Order
         const order = await razorpay.orders.create(options);
 
-        return NextResponse.json(order);
+        return NextResponse.json({
+            id: order.id,
+            amount: order.amount,
+            currency: order.currency
+        });
 
     } catch (error) {
-        console.error("Error creating order:", error);
-        return NextResponse.json({ error: 'Error creating order' }, { status: 500 });
+        console.error("Razorpay Order Error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

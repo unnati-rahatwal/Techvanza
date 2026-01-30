@@ -99,12 +99,21 @@ export default function ListingDetails({ params }) {
 
             // 2. Open Razorpay Options
             const options = {
-                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Add this to env/next.config
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
                 amount: orderData.amount,
                 currency: orderData.currency,
-                name: 'Techvanza Waste Market',
+                name: 'EcoTrade Marketplace',
                 description: `Purchase of ${listing.title}`,
+                image: '/logo.png', // Optional: Add your logo
                 order_id: orderData.id,
+                method: {
+                    upi: true,
+                    card: true,
+                    netbanking: true,
+                    wallet: true,
+                    emi: false,
+                    paylater: false
+                },
                 handler: async function (response) {
                     // 3. Verify Payment
                     const verifyRes = await fetch('/api/payment/verify', {
@@ -137,8 +146,19 @@ export default function ListingDetails({ params }) {
                     email: currentUser.email,
                     contact: currentUser.mobile
                 },
+                notes: {
+                    listingId: listing._id,
+                    buyerId: currentUser._id
+                },
                 theme: {
-                    color: '#3399cc'
+                    color: '#10b981',
+                    backdrop_color: '#1e293b'
+                },
+                modal: {
+                    ondismiss: function () {
+                        setBuying(false);
+                        console.log('Payment cancelled by user');
+                    }
                 }
             };
 
@@ -160,6 +180,13 @@ export default function ListingDetails({ params }) {
         <div className={styles.container}>
             <Navbar />
             <div className={styles.content}>
+                <button
+                    onClick={() => router.back()}
+                    className={styles.backButton}
+                    aria-label="Go back"
+                >
+                    ← Back
+                </button>
                 <div className={styles.grid}>
                     {/* Image Section */}
                     <div className={styles.imageSection}>
