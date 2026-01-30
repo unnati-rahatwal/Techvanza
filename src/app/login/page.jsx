@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
@@ -15,9 +16,39 @@ export default function Login() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
+    const router = useRouter(); // Initialize router
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("Login:", formData);
+        setError('');
+        setLoading(true);
+
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Login failed');
+            }
+
+            // Store user in localStorage (demo)
+            localStorage.setItem('user', JSON.stringify(data.user));
+
+            console.log("Login successful", data);
+            router.push('/'); // Redirect to dashboard
+        } catch (err) {
+            console.error(err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -52,8 +83,9 @@ export default function Login() {
                         </div>
 
                         <div style={{ marginTop: '0.5rem' }}>
+                            {error && <p style={{ color: '#ff4d4d', fontSize: '0.9rem', textAlign: 'center', marginBottom: '0.5rem' }}>{error}</p>}
                             <Button type="submit" variant="primary">
-                                Log In
+                                {loading ? 'Logging in...' : 'Log In'}
                             </Button>
                         </div>
                     </div>

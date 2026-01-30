@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
@@ -26,10 +27,52 @@ export default function Register() {
         setFormData({ ...formData, wasteTypes: selected });
     };
 
-    const handleSubmit = (e) => {
+    const router = useRouter(); // Initialize router
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("Registering as:", userType, formData);
-        // Add API call here
+        setError('');
+        setLoading(true);
+
+        try {
+            // Transform data to match API expectation
+            const payload = {
+                name: formData.name,
+                email: formData.email,
+                phone: formData.phone, // API expects 'mobile', need to check mapping
+                password: formData.password,
+                role: userType,
+                location: formData.location,
+                establishmentYear: formData.establishmentYear,
+                wasteTypes: userType === 'supplier' ? formData.wasteTypes : undefined,
+                interestTypes: userType === 'buyer' ? formData.wasteTypes : undefined
+            };
+
+            // Map phone to mobile if API expects mobile
+            payload.mobile = formData.phone;
+
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Registration failed');
+            }
+
+            console.log("Registration successful", data);
+            router.push('/login?registered=true'); // Redirect to login
+        } catch (err) {
+            console.error(err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -123,6 +166,7 @@ export default function Register() {
                     </div>
 
                     <div style={{ textAlign: 'center', marginTop: '1.5rem', color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>
+                        {error && <p style={{ color: '#ff4d4d', marginBottom: '1rem' }}>{error}</p>}
                         Already have an account?{' '}
                         <Link href="/login" style={{ color: 'var(--primary)', fontWeight: '500' }}>
                             Log In
