@@ -1,134 +1,228 @@
-"use client";
+'use client';
+
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import MultiSelect from '../../components/MultiSelect';
-import styles from '../../styles/auth.module.css';
+import styles from './page.module.css';
 
 export default function Register() {
-    const [userType, setUserType] = useState('supplier');
+    const router = useRouter();
+    const [role, setRole] = useState('supplier'); // 'supplier' or 'buyer'
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
     const [formData, setFormData] = useState({
         name: '',
+        mobile: '',
         email: '',
-        phone: '',
         password: '',
+        confirmPassword: '',
         location: '',
         establishmentYear: '',
-        wasteTypes: []
+        wasteTypes: [], // For Supplier
+        interestTypes: [] // For Buyer
     });
 
+    const wasteOptions = [
+        'Plastic (PET, HDPE)',
+        'Paper & Cardboard',
+        'Glass',
+        'Metal (Scrap)',
+        'E-Waste',
+        'Textile Waste',
+        'Organic/Bio'
+    ];
+
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleWasteTypeChange = (selected) => {
-        setFormData({ ...formData, wasteTypes: selected });
+    const handleMultiSelect = (e, field) => {
+        const options = Array.from(e.target.selectedOptions, option => option.value);
+        setFormData(prev => ({ ...prev, [field]: options }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("Registering as:", userType, formData);
-        // Add API call here
+        setError('');
+
+        if (formData.password !== formData.confirmPassword) {
+            setError('Passwords do not match');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const payload = {
+                name: formData.name,
+                mobile: formData.mobile,
+                email: formData.email,
+                password: formData.password,
+                role,
+                location: formData.location,
+                establishmentYear: formData.establishmentYear,
+                // Send relevant types based on role
+                wasteTypes: role === 'supplier' ? formData.wasteTypes : undefined,
+                interestTypes: role === 'buyer' ? formData.interestTypes : undefined
+            };
+
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Registration failed');
+            }
+
+            // Success - Redirect to login
+            router.push('/login?registered=true');
+
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <div className={styles.authContainer}>
-            <div className={styles.authCard}>
-                <div className={styles.authHeader}>
-                    <h1 className={`${styles.authTitle} text-gradient`}>Join the Circle</h1>
-                    <p className={styles.authSubtitle}>Create your account to start trading waste</p>
-                </div>
+        <div className={styles.container}>
+            <div className={styles.card}>
+                <h1 className={styles.title}>Join the Circle</h1>
+                <p className={styles.subtitle}>
+                    Create your account to start trading waste
+                </p>
 
-                <div className={styles.userTypeSwitch}>
+                {/* Role Toggle */}
+                <div className={styles.roleToggle}>
                     <button
-                        className={`${styles.switchBtn} ${userType === 'supplier' ? styles.active : ''}`}
-                        onClick={() => setUserType('supplier')}
                         type="button"
+                        className={`${styles.roleButton} ${role === 'supplier' ? styles.active : ''}`}
+                        onClick={() => setRole('supplier')}
                     >
-                        I'm a Supplier
+                        I am a Supplier
                     </button>
                     <button
-                        className={`${styles.switchBtn} ${userType === 'buyer' ? styles.active : ''}`}
-                        onClick={() => setUserType('buyer')}
                         type="button"
+                        className={`${styles.roleButton} ${role === 'buyer' ? styles.active : ''}`}
+                        onClick={() => setRole('buyer')}
                     >
-                        I'm a Buyer
+                        I am a Buyer
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="glass-panel" style={{ padding: '2rem' }}>
-                    <div style={{ display: 'grid', gap: '1rem' }}>
-                        <Input
-                            label="Full Name / Company Name"
-                            name="name"
-                            placeholder="Enter name"
-                            onChange={handleChange}
-                            required
-                        />
-                        <Input
-                            label="Email Address"
-                            name="email"
-                            type="email"
-                            placeholder="Enter email"
-                            onChange={handleChange}
-                            required
-                        />
-                        <Input
-                            label="Mobile Number"
-                            name="phone"
-                            type="tel"
-                            placeholder="Enter mobile number"
-                            onChange={handleChange}
-                            required
-                        />
-                        <Input
-                            label="Location (City)"
-                            name="location"
-                            placeholder="e.g. Pune, Mumbai"
-                            onChange={handleChange}
-                            required
-                        />
+                <form onSubmit={handleSubmit}>
+                    {/* Common Fields */}
+                    <Input
+                        label="Full Name / Company Name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        placeholder="Enter name"
+                        required
+                    />
 
-                        <Input
-                            label="Establishment Year"
-                            name="establishmentYear"
-                            type="number"
-                            placeholder="e.g. 2015"
-                            onChange={handleChange}
-                            required
-                        />
+                    <Input
+                        label="Email Address"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        placeholder="Enter your email"
+                        required
+                    />
 
-                        <MultiSelect
-                            label={userType === 'supplier' ? "Waste Types Supplied" : "Interested Waste Types"}
-                            selected={formData.wasteTypes}
-                            onChange={handleWasteTypeChange}
-                            placeholder={userType === 'supplier' ? "Select what you supply..." : "Select what you need..."}
-                        />
+                    <Input
+                        label="Mobile Number"
+                        name="mobile"
+                        type="tel"
+                        value={formData.mobile}
+                        onChange={handleChange}
+                        placeholder="Enter mobile number"
+                        required
+                    />
 
-                        <Input
-                            label="Password"
-                            name="password"
-                            type="password"
-                            placeholder="Create a password"
-                            onChange={handleChange}
-                            required
-                        />
+                    <Input
+                        label="Password"
+                        name="password"
+                        type="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        placeholder="Create a password"
+                        required
+                    />
 
-                        <div style={{ marginTop: '1rem' }}>
-                            <Button type="submit" variant="primary">
-                                Create Account
-                            </Button>
+                    <Input
+                        label="Confirm Password"
+                        name="confirmPassword"
+                        type="password"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        placeholder="Confirm your password"
+                        required
+                    />
+
+                    <Input
+                        label="Location (City/Region)"
+                        name="location"
+                        value={formData.location}
+                        onChange={handleChange}
+                        placeholder="e.g. Pune, Maharashtra"
+                        required
+                    />
+
+                    <Input
+                        label="Establishment Year"
+                        name="establishmentYear"
+                        type="number"
+                        min="1900"
+                        max={new Date().getFullYear().toString()}
+                        value={formData.establishmentYear}
+                        onChange={handleChange}
+                        placeholder="e.g. 2020"
+                        required
+                    />
+
+                    {/* Dynamic Fields */}
+                    {role === 'supplier' ? (
+                        <div className={styles.formGroup}>
+                            <MultiSelect
+                                label="Types of Waste Supplied"
+                                selected={formData.wasteTypes}
+                                onChange={(selected) => setFormData(prev => ({ ...prev, wasteTypes: selected }))}
+                                placeholder="Select what you supply..."
+                            />
                         </div>
-                    </div>
+                    ) : (
+                        <div className={styles.formGroup}>
+                            <MultiSelect
+                                label="Waste Types of Interest"
+                                selected={formData.interestTypes}
+                                onChange={(selected) => setFormData(prev => ({ ...prev, interestTypes: selected }))}
+                                placeholder="Select what you need..."
+                            />
+                        </div>
+                    )}
 
-                    <div style={{ textAlign: 'center', marginTop: '1.5rem', color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>
-                        Already have an account?{' '}
-                        <Link href="/login" style={{ color: 'var(--primary)', fontWeight: '500' }}>
-                            Log In
-                        </Link>
+                    {error && <p className={styles.error}>{error}</p>}
+
+                    <div style={{ marginTop: '1.5rem' }}>
+                        <Button type="submit" disabled={loading}>
+                            {loading ? 'Creating Account...' : 'Register'}
+                        </Button>
                     </div>
                 </form>
+
+                <p className={styles.loginLink}>
+                    Already have an account? <Link href="/login" className={styles.link}>Log In</Link>
+                </p>
             </div>
         </div>
     );

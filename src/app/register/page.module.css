@@ -1,73 +1,74 @@
+/* Main Container */
 .container {
-  min-height: 100vh;
   display: flex;
-  align-items: center;
   justify-content: center;
-  background: linear-gradient(
-    135deg,
-    rgba(13, 148, 136, 0.05) 0%,
-    rgba(245, 158, 11, 0.05) 100%
-  );
-  padding: 2rem;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #134e5e 0%, #71b280 100%);
+  /* Same Green/Teal Gradient */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Glassmorphism Card */
 .card {
-  background: white;
-  padding: 2.5rem;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-lg);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 3rem;
   width: 100%;
   max-width: 500px;
-  animation: fadeIn 0.5s ease-out;
-  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  color: white;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
+/* Titles */
 .title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
   text-align: center;
-  margin-bottom: 2rem;
-  color: var(--text-primary);
-  font-size: 1.75rem;
-  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.subtitle {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
+}
+
+/* Role Toggle Switch */
 .roleToggle {
   display: flex;
-  background: var(--background);
-  padding: 0.25rem;
-  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.3rem;
+  border-radius: 8px;
   margin-bottom: 2rem;
-  border: 1px solid var(--border);
 }
 
 .roleButton {
   flex: 1;
-  padding: 0.75rem;
+  padding: 0.6rem;
   border: none;
   background: transparent;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  border-radius: 6px;
   font-weight: 600;
-  border-radius: calc(var(--radius) - 2px);
-  transition: all 0.2s;
+  transition: all 0.3s ease;
 }
 
 .roleButton.active {
-  background: white;
-  color: var(--primary-color);
-  box-shadow: var(--shadow-sm);
-  font-weight: 700;
+  background: rgba(255, 255, 255, 0.9);
+  color: #134e5e;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
+/* Form Styles */
 .formGroup {
   margin-bottom: 1.5rem;
 }
@@ -75,83 +76,100 @@
 .label {
   display: block;
   margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #1e293b; /* Enforce dark slate color */
   font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
 }
 
-.input::placeholder {
-  color: #94a3b8; /* Visible gray for placeholder */
-  opacity: 1;
-}
-
-.input {
+.input,
+.select {
   width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
   font-size: 1rem;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
+  transition: all 0.3s ease;
   outline: none;
 }
 
-.input:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+.select option {
+  background-color: #134e5e;
+  /* Fix for dark bg options */
+  color: white;
 }
 
-.select {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background-color: white;
-  font-size: 1rem;
-  /* Custom select arrow if needed, but standard is fine for speed */
+.input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
 }
 
+.input:focus,
+.select:focus {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+/* Button Styles */
 .submitButton {
   width: 100%;
   padding: 1rem;
-  background-color: var(--primary-color);
-  color: white;
+  border-radius: 8px;
   border: none;
-  border-radius: var(--radius);
-  font-weight: 700;
-  font-size: 1.125rem;
+  background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   margin-top: 1rem;
-  transition: background-color 0.2s;
 }
 
 .submitButton:hover {
-  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(56, 239, 125, 0.4);
+}
+
+.submitButton:active {
+  transform: translateY(0);
 }
 
 .submitButton:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+  transform: none;
 }
 
+/* Links */
 .loginLink {
-  text-align: center;
   margin-top: 1.5rem;
+  text-align: center;
   font-size: 0.9rem;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .link {
-  color: var(--primary-color);
+  color: #38ef7d;
   font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
 }
 
 .link:hover {
+  color: #ffffff;
   text-decoration: underline;
 }
 
+/* Messages */
 .error {
-  color: var(--error);
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
+  background: rgba(255, 87, 87, 0.2);
+  border: 1px solid rgba(255, 87, 87, 0.5);
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  color: #ffcccc;
+  text-align: center;
 }
