@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import PaymentButton from '@/components/PaymentButton';
+import AIAgent from '@/components/AIAgent';
 import styles from './page.module.css';
 
 // Unsplash Image Helper
@@ -124,6 +125,7 @@ export default function Marketplace() {
                     </div>
                 )}
             </div>
+            <AIAgent />
         </div>
     );
 }

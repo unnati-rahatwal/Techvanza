@@ -100,43 +100,20 @@ export default function Navbar() {
                             </div>
 
                             {isOpen && (
-                                <div style={{
+                                <div className="dropdown-card" style={{
                                     position: 'absolute',
                                     top: '120%',
                                     right: 0,
-                                    background: '#1e293b',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '12px',
-                                    padding: '0.5rem',
-                                    minWidth: '180px',
-                                    boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '0.2rem',
-                                    zIndex: 101
+                                    minWidth: '200px',
+                                    zIndex: 101,
+                                    padding: '0.5rem'
                                 }}>
-                                    <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '0.5rem' }}>
+                                    <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '0.25rem' }}>
                                         <div style={{ fontSize: '0.95rem', fontWeight: '600', color: 'white' }}>{user.name}</div>
                                         <div style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'capitalize' }}>{user.role}</div>
                                     </div>
 
-                                    <button
-                                        onClick={handleLogout}
-                                        style={{
-                                            background: 'transparent',
-                                            border: 'none',
-                                            color: '#ef4444',
-                                            textAlign: 'left',
-                                            padding: '0.75rem 1rem',
-                                            cursor: 'pointer',
-                                            borderRadius: '8px',
-                                            fontSize: '0.9rem',
-                                            fontWeight: '500',
-                                            transition: 'background 0.2s'
-                                        }}
-                                        onMouseOver={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.1)'}
-                                        onMouseOut={(e) => e.target.style.background = 'transparent'}
-                                    >
+                                    <button onClick={handleLogout} className="dropdown-item danger">
                                         Log Out
                                     </button>
                                 </div>
