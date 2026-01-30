@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import AIAgent from '@/components/AIAgent';
+import Loading from '@/components/Loading';
 import styles from './page.module.css';
 
 const getWasteImage = (type) => {

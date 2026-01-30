@@ -22,13 +22,14 @@ export async function GET(request) {
         // Transform data slightly to match frontend expectation
         const formattedTransactions = transactions.map(order => ({
             _id: order._id,
+            listingId: order.listingId?._id,
             quantity: order.quantity,
             totalPrice: order.totalPrice,
             status: order.status,
             timestamp: order.timestamp,
             blockchainTxHash: order.blockchainTxHash,
             listing: {
-                title: order.listingId?.wasteType + ' Waste', // Fallback title
+                title: order.listingId?.title || order.listingId?.wasteType + ' Waste',
                 wasteType: order.listingId?.wasteType,
                 imageUrl: order.listingId?.imageUrl,
             },

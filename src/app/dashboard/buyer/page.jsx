@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import AIAgent from '@/components/AIAgent';
+import Loading from '@/components/Loading';
 import styles from './page.module.css';
 
 export default function BuyerDashboard() {
@@ -57,10 +58,7 @@ export default function BuyerDashboard() {
     if (loading) return (
         <div className={styles.loadingContainer}>
             <Navbar />
-            <div className={styles.loading}>
-                <div className={styles.spinner}></div>
-                <p>Loading Dashboard...</p>
-            </div>
+            <Loading message="Loading Dashboard..." />
         </div>
     );
 
@@ -117,6 +115,7 @@ export default function BuyerDashboard() {
                                         <th>Supplier</th>
                                         <th>Date</th>
                                         <th>Status</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -132,6 +131,14 @@ export default function BuyerDashboard() {
                                                 <span className={`${styles.status} ${styles[order.status]}`}>
                                                     {order.status}
                                                 </span>
+                                            </td>
+                                            <td>
+                                                <Link
+                                                    href={`/tracking/${order.listingId}`}
+                                                    className={styles.trackBtn}
+                                                >
+                                                    🔗 Track
+                                                </Link>
                                             </td>
                                         </tr>
                                     ))}

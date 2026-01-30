@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import dbConnect from '@/lib/mongodb';
 import Listing from '@/models/Listing';
 import User from '@/models/User';
+import Order from '@/models/Order';
 import { recordBlockchainPurchase } from '@/utils/blockchain';
 
 export async function POST(request) {
@@ -28,15 +29,34 @@ export async function POST(request) {
         }
 
         // 2. Update Database
-        const { listingId, buyerId } = notes;
+        const { listingId, buyerId, supplierId, quantity } = notes;
 
-        // Update Listing Status
+        // Fetch listing to get price
         const listing = await Listing.findByIdAndUpdate(listingId, {
             status: 'sold',
             buyer: buyerId
         }, { new: true });
 
-        // 3. Write to Blockchain (Full Supply Chain Tracking)
+        if (!listing) {
+            return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
+        }
+
+        // Calculate total price
+        const totalPrice = listing.pricePerKg * quantity;
+
+        // 3. Create Order Record
+        const order = await Order.create({
+            buyerId,
+            supplierId: supplierId || listing.supplier,
+            listingId,
+            quantity,
+            totalPrice,
+            status: 'completed',
+            paymentId: razorpay_payment_id,
+            timestamp: new Date()
+        });
+
+        // 4. Write to Blockchain (Full Supply Chain Tracking)
         // Hash IDs for privacy
         const buyerHash = crypto.createHash('sha256').update(buyerId).digest('hex');
 
@@ -44,9 +64,15 @@ export async function POST(request) {
         // For Hackathon, await it or fire-and-forget (awaiting for demo proof)
         const txHash = await recordBlockchainPurchase(listingId, buyerHash);
 
+        // 5. Update order with blockchain hash
+        if (txHash) {
+            await Order.findByIdAndUpdate(order._id, { blockchainTxHash: txHash });
+        }
+
         return NextResponse.json({
             success: true,
             txHash,
+            orderId: order._id,
             message: 'Payment verified and recorded on blockchain'
         });
 

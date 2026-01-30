@@ -2,22 +2,30 @@
 
 import { useState, useEffect, use } from 'react';
 import Navbar from '@/components/Navbar';
+import Loading from '@/components/Loading';
 import Link from 'next/link';
+import styles from './page.module.css';
 
 export default function TrackingPage({ params }) {
     const resolvedParams = use(params);
     const { id } = resolvedParams;
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchTracking = async () => {
             try {
                 const res = await fetch(`/api/tracking/${id}`);
                 const json = await res.json();
-                if (res.ok) setData(json);
+                if (res.ok) {
+                    setData(json);
+                } else {
+                    setError(json.message || json.error || 'Failed to load tracking data');
+                }
             } catch (err) {
                 console.error(err);
+                setError('Network error. Please try again.');
             } finally {
                 setLoading(false);
             }
@@ -25,87 +33,146 @@ export default function TrackingPage({ params }) {
         fetchTracking();
     }, [id]);
 
-    if (loading) return <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">Loading Blockchain Data...</div>;
-    if (!data) return <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">Tracking Not Found</div>;
+    if (loading) return (
+        <div style={{ minHeight: '100vh', background: '#0f172a', color: 'white' }}>
+            <Navbar />
+            <Loading message="Loading Blockchain Data..." />
+        </div>
+    );
 
-    const isSimulated = data.history.some(h => h.isSimulated);
+    if (error || !data) return (
+        <div style={{ minHeight: '100vh', background: '#0f172a', color: 'white' }}>
+            <Navbar />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
+                <div style={{ textAlign: 'center', maxWidth: '28rem', padding: '2rem', background: 'rgba(30, 41, 59, 0.5)', borderRadius: '1rem', border: '1px solid rgba(71, 85, 105, 0.7)' }}>
+                    <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📦</div>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>Tracking Not Found</h2>
+                    <p style={{ color: '#94a3b8', marginBottom: '1.5rem' }}>
+                        {error || 'This listing does not exist or tracking data is unavailable.'}
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <Link
+                            href="/dashboard/buyer"
+                            style={{ display: 'block', padding: '0.75rem 1.5rem', background: '#059669', borderRadius: '0.5rem', fontWeight: '600', textDecoration: 'none', color: 'white' }}
+                        >
+                            ← Back to Dashboard
+                        </Link>
+                        <Link
+                            href="/marketplace"
+                            style={{ display: 'block', padding: '0.75rem 1.5rem', background: '#475569', borderRadius: '0.5rem', fontWeight: '600', textDecoration: 'none', color: 'white' }}
+                        >
+                            Browse Marketplace
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
+    const stateIcons = {
+        'CREATED': '📝',
+        'PURCHASED': '💰',
+        'PROCESSING': '⚙️',
+        'SHIPPED': '🚚',
+        'DELIVERED': '✅',
+        'CANCELLED': '❌'
+    };
 
     return (
-        <div className="min-h-screen bg-slate-900 text-white">
+        <div className={styles.container}>
             <Navbar />
-            <div className="max-w-4xl mx-auto p-8">
-                <div className="mb-8">
-                    <Link href="/dashboard/buyer" className="text-emerald-400 hover:text-emerald-300">← Back to Dashboard</Link>
-                    <h1 className="text-3xl font-bold mt-4">Supply Chain Tracking</h1>
-                    <p className="text-slate-400">Listing ID: {id}</p>
 
-                    {isSimulated && (
-                        <div className="mt-4 bg-amber-900/20 border border-amber-500/30 rounded-lg p-3 text-sm">
-                            <span className="text-amber-400">⚠️ Demo Mode:</span> Using MongoDB simulation (Blockchain not deployed)
-                        </div>
-                    )}
-                </div>
+            <div className={styles.content}>
+                <Link href="/dashboard/buyer" className={styles.backLink}>
+                    <span>←</span> Back to Dashboard
+                </Link>
 
-                {/* Product Info */}
-                <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 mb-8">
-                    <h2 className="text-xl font-bold mb-4">{data.listing.title}</h2>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <span className="text-slate-400 block">Supplier</span>
-                            {data.listing.supplier}
+                <div className={styles.header}>
+                    <div className={styles.headerTop}>
+                        <div className={styles.icon}>
+                            🔗
                         </div>
                         <div>
-                            <span className="text-slate-400 block">Quantity</span>
-                            {data.listing.quantity} kg
+                            <h1 className={styles.title}>
+                                Supply Chain Tracking
+                            </h1>
+                            <p className={styles.listingId}>ID: {id.slice(0, 8)}...{id.slice(-6)}</p>
                         </div>
-                        {data.listing.buyer && (
-                            <div>
-                                <span className="text-slate-400 block">Buyer</span>
-                                {data.listing.buyer}
-                            </div>
-                        )}
                     </div>
                 </div>
 
-                {/* Timeline */}
-                <div className="relative border-l-2 border-emerald-500/30 ml-4 space-y-8">
-                    {data.history.map((step, index) => (
-                        <div key={index} className="relative pl-8">
-                            {/* Dot */}
-                            <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50"></div>
+                <div className={styles.productCard}>
+                    <h2 className={styles.productTitle}>
+                        <span>📦</span>
+                        {data.listing.title}
+                    </h2>
 
-                            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-                                <div className="flex justify-between items-start mb-2">
-                                    <h3 className="text-lg font-bold text-emerald-400">{step.state}</h3>
-                                    <span className="text-xs text-slate-500">{step.timestamp}</span>
-                                </div>
-
-                                <div className="text-sm text-slate-400 font-mono break-all">
-                                    {step.txHash && step.txHash.length > 20 ? (
-                                        <div className="mt-2">
-                                            <span className="block mb-1 text-slate-500">
-                                                {step.isSimulated ? 'Simulated TX Hash:' : 'Blockchain Proof:'}
-                                            </span>
-                                            {step.isSimulated ? (
-                                                <span className="text-slate-500">{step.txHash}</span>
-                                            ) : (
-                                                <a
-                                                    href={`https://sepolia.etherscan.io/tx/${step.txHash}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-400 hover:underline flex items-center gap-2"
-                                                >
-                                                    {step.txHash} ↗
-                                                </a>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <span className="text-slate-600 italic">Pending...</span>
-                                    )}
-                                </div>
-                            </div>
+                    <div className={styles.infoGrid}>
+                        <div className={styles.infoItem}>
+                            <div className={styles.infoLabel}>Supplier</div>
+                            <div className={styles.infoValue}>{data.listing.supplier}</div>
                         </div>
-                    ))}
+
+                        <div className={styles.infoItem}>
+                            <div className={styles.infoLabel}>Quantity</div>
+                            <div className={styles.infoValue}>{data.listing.quantity} kg</div>
+                        </div>
+
+                        {data.listing.buyer && data.listing.buyer !== 'N/A' && (
+                            <div className={styles.infoItem}>
+                                <div className={styles.infoLabel}>Buyer</div>
+                                <div className={styles.infoValue}>{data.listing.buyer}</div>
+                            </div>
+                        )}
+
+                        <div className={styles.infoItem}>
+                            <div className={styles.infoLabel}>Status</div>
+                            <div className={styles.infoValue} style={{ textTransform: 'capitalize' }}>{data.listing.status}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className={styles.timelineCard}>
+                    <h2 className={styles.timelineTitle}>
+                        <span>⏱️</span>
+                        Transaction Timeline
+                    </h2>
+
+                    <div className={styles.timelineContainer}>
+                        <div className={styles.timelineLine}></div>
+
+                        <div className={styles.timelineItems}>
+                            {data.history.map((step, index) => (
+                                <div key={index} className={styles.timelineItem}>
+                                    <div className={styles.timelineIcon}>
+                                        {stateIcons[step.state] || '📍'}
+                                    </div>
+
+                                    <div className={styles.timelineContent}>
+                                        <div className={styles.timelineHeader}>
+                                            <h3 className={styles.stateName}>
+                                                {step.state}
+                                            </h3>
+                                            <span className={styles.timestamp}>
+                                                {step.timestamp}
+                                            </span>
+                                        </div>
+
+                                        {step.txHash && step.txHash.length > 20 && (
+                                            <div className={styles.txHash}>
+                                                <div className={styles.txLabel}>
+                                                    Transaction Hash
+                                                </div>
+                                                <div className={styles.txValue}>
+                                                    {step.txHash}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

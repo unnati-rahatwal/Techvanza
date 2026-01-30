@@ -19,11 +19,17 @@ export async function GET(request) {
         }
 
         // Simple recommendation: Match listings with buyer's interest types
-        // Exclude sold items
-        const recommendations = await Listing.find({
-            wasteType: { $in: user.interestTypes },
-            status: 'available'
-        }).limit(10).populate('supplier', 'name location');
+        // If no interests, show popular available listings
+        let query = { status: 'available' };
+
+        if (user.interestTypes && user.interestTypes.length > 0) {
+            query.wasteType = { $in: user.interestTypes };
+        }
+
+        const recommendations = await Listing.find(query)
+            .limit(10)
+            .sort({ createdAt: -1 })
+            .populate('supplier', 'name location');
 
         return NextResponse.json({ recommendations }, { status: 200 });
 
